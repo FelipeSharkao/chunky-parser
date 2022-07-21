@@ -1,5 +1,6 @@
 import { Parser } from './types'
 
+export * from './combinators'
 export * from './parsers'
 export * from './types'
 export * from './utils'
