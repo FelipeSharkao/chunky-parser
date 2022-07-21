@@ -1,6 +1,6 @@
 # Chunk.ts
 
-Elegant and declarative parsing for typescript
+Elegant and declarative parsing for Typescript
 
 ## Roadmap
 
@@ -10,4 +10,4 @@ Elegant and declarative parsing for typescript
 
 ## Contributing
 
-This is moslty a parsenall project, but feel free to open a PR if you think you can help.
+This is moslty a parsonal project, but feel free to open a PR if you think you can help.
