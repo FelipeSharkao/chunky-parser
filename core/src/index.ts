@@ -1,6 +1,8 @@
 import { Parser } from './types'
 
+export * from './parsers'
 export * from './types'
+export * from './utils'
 
 export function parse<T>(parser: Parser<T>, fileName: string, content: string): T {
   const result = parser({ fileName, content, offset: 0 })
