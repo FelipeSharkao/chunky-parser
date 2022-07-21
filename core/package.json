@@ -1,0 +1,29 @@
+{
+  "name": "@chunk.ts/core",
+  "version": "1.0.0",
+  "description": "Parser Combinator for typescript",
+  "keywords": [
+    "parser",
+    "string",
+    "combinator"
+  ],
+  "author": "Felipe Nascimento <felipenasgomes@gmail.com>",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^3.2.0",
+    "bun-types": "^0.1.4",
+    "prettier": "^2.6.2",
+    "ts-node": "^10.7.0",
+    "tslib": "^2.4.0",
+    "tsup": "^5.12.6",
+    "typescript": "^4.6.4"
+  }
+}
