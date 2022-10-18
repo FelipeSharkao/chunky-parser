@@ -29,15 +29,15 @@ export function predicate<T>(parser: Parser<T>): Parser<T> {
 
 /*
  * Creates a parser that will succeede if the original parser fails,
- * and fail if the original parser succeedes.
+ * and will fail if the original parser succeedes.
  */
-export function not<T>(parser: Parser<T>): Parser<void> {
+export function not<T>(parser: Parser<T>): Parser<null> {
   return (ctx) => {
     const result = parser(ctx)
     if (result.success) {
       return failure(ctx, [])
     } else {
-      return success(ctx, undefined)
+      return success(ctx, null)
     }
   }
 }
