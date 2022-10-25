@@ -12,7 +12,7 @@ export function parse<T>(parser: Parser<T>, source: Source): T {
   }
   throw new Error(
     'Parsing error\n\n' +
-      `At ${result.context.source.path}\n` +
+      `At ${result.next.source.path}\n` +
       (result.expected.length === 0
         ? '    Unexpected input.'
         : `    Unexpected input. Expected one of: ${result.expected.join(', ')}`)

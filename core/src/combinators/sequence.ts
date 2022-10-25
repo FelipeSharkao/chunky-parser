@@ -11,16 +11,17 @@ type Inner<T extends Parser<any>[]> = {
 export function seq<T extends Parser<any>[]>(...parsers: T): Parser<Inner<T>> {
   return (ctx) => {
     const value = [] as any[]
+    let next = ctx
     for (const parser of parsers) {
-      const result = parser(ctx)
+      const result = parser(next)
       if (result.success) {
         value.push(result.value)
-        ctx = result.context
+        next = result.next
       } else {
         return result
       }
     }
-    return success(ctx, value as Inner<T>)
+    return success(value as Inner<T>, [ctx.offset, next.offset], next)
   }
 }
 
@@ -30,18 +31,19 @@ export function seq<T extends Parser<any>[]>(...parsers: T): Parser<Inner<T>> {
 export function many<T>(parser: Parser<T>, min: number, max: number): Parser<T[]> {
   return (ctx) => {
     const value = [] as T[]
+    let next = ctx
     for (let i = 0; i < max; i++) {
-      const result = parser(ctx)
+      const result = parser(next)
       if (result.success) {
         value.push(result.value)
-        ctx = result.context
+        next = result.next
       } else if (value.length < min) {
         return result
       } else {
         break
       }
     }
-    return success(ctx, value)
+    return success(value, [ctx.offset, next.offset], next)
   }
 }
 

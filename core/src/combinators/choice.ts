@@ -8,7 +8,7 @@ export function optional<T>(parser: Parser<T>): Parser<T | null> {
   return (ctx) => {
     const result = parser(ctx)
     if (!result.success) {
-      return success(ctx, null)
+      return success(null, [ctx.offset, ctx.offset], ctx)
     }
     return result
   }
@@ -21,7 +21,7 @@ export function predicate<T>(parser: Parser<T>): Parser<T> {
   return (ctx) => {
     const result = parser(ctx)
     if (result.success) {
-      return { ...result, context: ctx }
+      return { ...result, next: ctx }
     }
     return result
   }
@@ -37,7 +37,7 @@ export function not<T>(parser: Parser<T>): Parser<null> {
     if (result.success) {
       return failure(ctx, [])
     } else {
-      return success(ctx, null)
+      return success(null, [ctx.offset, ctx.offset], ctx)
     }
   }
 }

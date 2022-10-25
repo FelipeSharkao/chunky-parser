@@ -9,7 +9,7 @@ export function assertParser<T>(parser: Parser<T>, sourceContent: string, offset
     succeeds(length: number, value: T): void {
       assert.ok(result.success, 'Expect parser to succeed, it failed instead')
 
-      const actualLength = result.context.offset - offset
+      const actualLength = result.next.offset - offset
       assert.equal(
         actualLength,
         length,
@@ -26,7 +26,7 @@ export function assertParser<T>(parser: Parser<T>, sourceContent: string, offset
       assert.ok(!result.success, 'Expect parser to fail, it succeeded instead')
 
       const expectedPos = offset + after
-      const actualPos = result.context.offset
+      const actualPos = result.next.offset
       assert.equal(
         actualPos,
         expectedPos,
