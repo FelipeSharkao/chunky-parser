@@ -20,7 +20,7 @@ export function raw(parser: Parser<unknown>): Parser<string> {
   return (ctx) => {
     const result = parser(ctx)
     if (result.success) {
-      return { ...result, value: ctx.content.slice(ctx.offset, result.context.offset) }
+      return { ...result, value: ctx.source.content.slice(ctx.offset, result.context.offset) }
     }
     return result
   }

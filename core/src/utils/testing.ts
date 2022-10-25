@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert'
 import { Parser } from '@/types'
 
 export function assertParser<T>(parser: Parser<T>, sourceContent: string, offset = 0) {
-  let result = parser({ fileName: '', content: sourceContent, offset })
+  let result = parser({ source: { name: '', path: '', content: sourceContent }, offset })
 
   return {
     succeeds(length: number, value: T): void {

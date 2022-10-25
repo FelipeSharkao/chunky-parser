@@ -21,5 +21,8 @@ export function failure(context: ParseContext, expected: string[] = []): ParseFa
  */
 export function next(context: ParseContext, n: number): ParseResult<string> {
   if (n <= 0) throw new Error('expected a positive number')
-  return success(move(context, n), context.content.slice(context.offset, context.offset + n))
+  return success(
+    move(context, n),
+    context.source.content.slice(context.offset, context.offset + n)
+  )
 }

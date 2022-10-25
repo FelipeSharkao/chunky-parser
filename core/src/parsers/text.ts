@@ -6,7 +6,7 @@ import { next, failure } from '@/utils'
  */
 export function str(value: string): Parser<string> {
   return (ctx) => {
-    if (ctx.content.startsWith(value, ctx.offset)) {
+    if (ctx.source.content.startsWith(value, ctx.offset)) {
       return next(ctx, value.length)
     }
     return failure(ctx)
@@ -21,7 +21,7 @@ export function re(regexp: RegExp): Parser<string> {
     const offsetRegexp = new RegExp(regexp, regexp.flags + 'g')
     offsetRegexp.lastIndex = ctx.offset
 
-    const match = offsetRegexp.exec(ctx.content)
+    const match = offsetRegexp.exec(ctx.source.content)
     if (match && match.index === ctx.offset) {
       return next(ctx, match[0].length)
     }

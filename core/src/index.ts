@@ -1,18 +1,18 @@
-import { Parser } from './types'
+import { Parser, Source } from '@/types'
 
-export * from './combinators'
-export * from './parsers'
-export * from './types'
-export * from './utils'
+export * from '@/combinators'
+export * from '@/parsers'
+export * from '@/types'
+export * from '@/utils'
 
-export function parse<T>(parser: Parser<T>, fileName: string, content: string): T {
-  const result = parser({ fileName, content, offset: 0 })
+export function parse<T>(parser: Parser<T>, source: Source): T {
+  const result = parser({ source, offset: 0 })
   if (result.success) {
     return result.value
   }
   throw new Error(
     'Parsing error\n\n' +
-      `At ${result.context.fileName}\n` +
+      `At ${result.context.source.path}\n` +
       (result.expected.length === 0
         ? '    Unexpected input.'
         : `    Unexpected input. Expected one of: ${result.expected.join(', ')}`)

@@ -5,7 +5,7 @@ import { failure, next } from '@/utils'
  * Matches a sigle, no-specified character
  */
 export const any: Parser<string> = (ctx) => {
-  if (ctx.offset < ctx.content.length) {
+  if (ctx.offset < ctx.source.content.length) {
     return next(ctx, 1)
   }
   return failure(ctx)
@@ -17,7 +17,7 @@ export const any: Parser<string> = (ctx) => {
 export function anyOf(characters: string): Parser<string> {
   const charArray = characters.split('')
   return (ctx) => {
-    if (charArray.includes(ctx.content[ctx.offset])) {
+    if (charArray.includes(ctx.source.content[ctx.offset])) {
       return next(ctx, 1)
     }
     return failure(ctx)
@@ -47,7 +47,7 @@ export function anyIn(...ranges: string[]): Parser<string> {
   const nRanges = ranges.map((x) => new CharRange(x))
   return (ctx) => {
     for (const range of nRanges) {
-      const c = ctx.content.at(ctx.offset)
+      const c = ctx.source.content[ctx.offset]
       if (c && range.match(c)) {
         return next(ctx, 1)
       }

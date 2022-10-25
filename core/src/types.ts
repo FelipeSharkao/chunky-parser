@@ -1,8 +1,13 @@
 export type Parser<T> = (context: ParseContext) => ParseResult<T>
 
-export type ParseContext = {
-  fileName: string
+export interface Source {
+  name: string
+  path: string
   content: string
+}
+
+export type ParseContext = {
+  source: Source
   offset: number
 }
 
