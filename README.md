@@ -4,7 +4,7 @@ Elegant and declarative parsing for Typescript
 
 ## Roadmap
 
-- [ ] Parsing combinator
+- [x] Parsing combinator
 - [ ] Stack management
 - [ ] Parsing expression grammar
 
