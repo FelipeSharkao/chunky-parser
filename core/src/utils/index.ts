@@ -1,3 +1,3 @@
 export * from './context'
-export * from './repr'
 export * from './result'
+export * from './testing'
