@@ -7,14 +7,14 @@ import { map, raw } from './transform'
 
 describe('map', () => {
   it('transforms the output of a parser', () => {
-    const parser = map(num, (res) => Number(res.value))
+    const parser = map(num, (res) => Number(res))
     const src = '12'
     assertParser(parser, src, 0).succeeds(1, 1)
     assertParser(parser, src, 1).succeeds(1, 2)
   })
 
   it('fails when the original parser fails', () => {
-    const parser = map(num, (res) => Number(res.value))
+    const parser = map(num, (res) => Number(res))
     const src = '1a'
     assertParser(parser, src, 0).succeeds(1, 1)
     assertParser(parser, src, 1).fails()
