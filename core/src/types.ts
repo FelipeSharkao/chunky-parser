@@ -1,4 +1,4 @@
-export type Parser<T> = (context: ParseContext) => ParseResult<T>
+export type Parser<T> = (context: Readonly<ParseContext>) => ParseResult<T>
 
 export interface Source {
   name: string
@@ -8,9 +8,10 @@ export interface Source {
 
 export type LocationRange = readonly [number, number]
 
-export type ParseContext = {
+export interface ParseContext {
   source: Source
   offset: number
+  stacks?: Record<string, string[]>
 }
 
 export type ParseResult<T> = ParseSuccess<T> | ParseFailure
