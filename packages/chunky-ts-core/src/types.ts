@@ -11,7 +11,6 @@ export type LocationRange = readonly [number, number]
 export interface ParseContext {
   source: Source
   offset: number
-  stacks?: Record<string, string[]>
 }
 
 export type ParseResult<T> = ParseSuccess<T> | ParseFailure

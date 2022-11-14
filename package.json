@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
-    "build": "bun run nx affected --target=build",
-    "build:dev": "NODE_ENV=development bun run nx affected --target=build",
+    "build": "bun run nx run-many --target=build",
+    "build:dev": "NODE_ENV=development bun run nx run-many --target=build",
     "test": "bun run nx affected --target=test",
     "test:dev": "NODE_ENV=development bun run nx affected --target=test"
   },

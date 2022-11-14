@@ -1,7 +1,7 @@
 {
-  "name": "@chunky/core",
+  "name": "@chunky/stack",
   "version": "1.0.0",
-  "description": "Parser Combinator for typescript",
+  "description": "Stack-based context management for chunky",
   "keywords": [
     "parser",
     "string",
@@ -18,5 +18,9 @@
   },
   "devDependencies": {
     "tsup": "^6.4.0"
+  },
+  "dependencies": {
+    "@chunky/core": "*",
+    "immer": "^9.0.16"
   }
 }

@@ -1,9 +1,8 @@
 import { describe, it } from 'bun:test'
 
-import { many1, seq, StackGroup } from '@/combinators'
-import { alpha, str } from '@/parsers'
-import { ParseContext } from '@/types'
-import { assertParser } from '@/utils'
+import { alpha, assertParser, many1, ParseContext, seq, str } from '@chunky/core'
+
+import { StackGroup } from './stack'
 
 describe('StackGroup', () => {
   const src = 'Foo Bar Quz Qux Bar Foo Quz Qux '

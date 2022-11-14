@@ -1,10 +1,6 @@
 import produce from 'immer'
 
-import { str } from '@/parsers'
-import { ParseContext, Parser } from '@/types'
-import { failure, success } from '@/utils'
-
-import { raw } from './transform'
+import { failure, ParseContext, Parser, raw, str, success } from '@chunky/core'
 
 /**
  * Group of combinatos that stores the parsed text, allowing for complex, context-aware

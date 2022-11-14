@@ -22,9 +22,17 @@ importers:
 
   packages/chunky-ts-core:
     specifiers:
+      tsup: ^6.4.0
+    devDependencies:
+      tsup: 6.4.0_typescript@4.8.4
+
+  packages/chunky-ts-stack:
+    specifiers:
+      '@chunky/core': '*'
       immer: ^9.0.16
       tsup: ^6.4.0
     dependencies:
+      '@chunky/core': link:../chunky-ts-core
       immer: 9.0.16
     devDependencies:
       tsup: 6.4.0_typescript@4.8.4
