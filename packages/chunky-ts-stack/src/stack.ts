@@ -3,13 +3,14 @@ import produce from 'immer'
 import { failure, ParseContext, Parser, raw, str, success } from '@chunky/core'
 
 /**
- * Group of combinatos that stores the parsed text, allowing for complex, context-aware
- * syntaxes without requiring custom messy custom parsers
+ * Group of combinators that stores the parsed text, allowing for complex, context-aware syntaxes
  */
 export class StackGroup {
   constructor(readonly name: string) {}
 
-  /* Creates a parser that adds the matched text to the top of the text */
+  /**
+   * Creates a parser that adds the matched text to the top of the text
+   */
   push(parser: Parser<any>): Parser<string> {
     return (ctx) => {
       const result = raw(parser)(ctx)
@@ -25,11 +26,22 @@ export class StackGroup {
     }
   }
 
-  /*
-   * Creates a parser that matches the text at the top of the stack, without removing it.
+  /**
+   * Creates a parser that matches the text at the top of the stack, without removing it. Fails if the stack is empty
    */
   peek(): Parser<string>
+  /**
+   * Creates a parser that matches the text of a item of the stack, without removing it. Fails if the stack is empty
+   *
+   * @arg at - The index of the item. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   peek(at: number): Parser<string>
+  /**
+   * Creates a parser that matches the text in a slice of the stack, without removing it. Fails if the stack is empty
+   *
+   * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   peek(start: number, end: number): Parser<string>
   peek(start?: number, end?: number): Parser<string> {
     return (ctx) => {
@@ -41,12 +53,22 @@ export class StackGroup {
     }
   }
 
-  /*
-   * Creates a parser that matches the text at the top of the stack, removing it,
-   * fails if the stack is empty.
+  /**
+   * Creates a parser that matches the text at the top of the stack, removing it. Fails if the stack is empty
    */
   pop(): Parser<string>
+  /**
+   * Creates a parser that matches the text of a item of the stack, removing it. Fails if the stack is empty
+   *
+   * @arg at - The index of the item. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   pop(at: number): Parser<string>
+  /**
+   * Creates a parser that matches the text in a slice of the stack, removing it. Fails if the stack is empty
+   *
+   * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   pop(start: number, end: number): Parser<string>
   pop(start?: number, end?: number): Parser<string> {
     return (ctx) => {
@@ -62,11 +84,22 @@ export class StackGroup {
     }
   }
 
-  /*
-   * Creates a parser that removes the item at the top of the stack, aways matches.
+  /**
+   * Creates a parser that removes the item at the top of the stack
    */
   drop(): Parser<null>
+  /**
+   * Creates a parser that removes a item of the stack
+   *
+   * @arg at - The index of the item to be removed. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   drop(at: number): Parser<null>
+  /**
+   * Creates a parser that removes a slice of the stack
+   *
+   * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+   */
   drop(start: number, end: number): Parser<null>
   drop(start?: number, end?: number): Parser<null> {
     return (ctx) => {
