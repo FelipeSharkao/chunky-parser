@@ -1,14 +1,11 @@
 {
-  "include": ["./src/**/*"],
-  "exclude": ["./node_modules*"],
+  "exclude": ["./**/node_modules*"],
   "compilerOptions": {
     "target": "es6",
     "strict": true,
     "moduleResolution": "node",
     "importsNotUsedAsValues": "remove",
     "preserveValueImports": false,
-    "rootDir": "./src",
-    "paths": { "@/*": ["./src/*"] },
     "types": ["bun-types"]
   }
 }
