@@ -1,6 +1,6 @@
-import produce from 'immer'
-
 import { failure, ParseContext, Parser, raw, str, success } from '@chunky/core'
+
+import { StackMap } from '@/types'
 
 /**
  * Group of combinators that stores the parsed text, allowing for complex, context-aware syntaxes
@@ -15,11 +15,9 @@ export class StackGroup {
     return (ctx) => {
       const result = raw(parser)(ctx)
       if (result.success) {
-        return produce(result, (draft) => {
-          const stacks = draft.next.stacks || (draft.next.stacks = {})
-          const array = stacks[this.name] || (stacks[this.name] = [])
-          array.push(draft.value)
-        })
+        const stacks = { ...result.next.stacks }
+        stacks[this.name] = [...(stacks[this.name] || []), result.value]
+        return { ...result, next: { ...result.next, stacks } }
       } else {
         return result
       }
@@ -45,11 +43,11 @@ export class StackGroup {
   peek(start: number, end: number): Parser<string>
   peek(start?: number, end?: number): Parser<string> {
     return (ctx) => {
-      const array = ctx.stacks?.[this.name]
-      if (!array?.length) return failure(ctx)
-      const [_start, _end] = this.fixRange(ctx, start, end)
-      const text = array.slice(_start, _end).join('')
-      return str(text)(ctx)
+      try {
+        return str(this.getItem(ctx.stacks, start, end))(ctx)
+      } catch (_) {
+        return failure(ctx)
+      }
     }
   }
 
@@ -72,15 +70,14 @@ export class StackGroup {
   pop(start: number, end: number): Parser<string>
   pop(start?: number, end?: number): Parser<string> {
     return (ctx) => {
-      const result = this.peek(start as number, end as number)(ctx)
-      if (result.success) {
-        const { next } = this.drop(start as number, end as number)(ctx)
-        return produce(result, (draft) => {
-          const stacks = draft.next.stacks || (draft.next.stacks = {})
-          stacks[this.name] = next.stacks?.[this.name] || []
-        })
+      try {
+        const res = { ...str(this.getItem(ctx.stacks, start, end))(ctx) }
+        if (!res.success) return res
+        res.next = { ...res.next, stacks: this.removeItem(res.next.stacks, start, end) }
+        return res
+      } catch (_) {
+        return failure(ctx)
       }
-      return result
     }
   }
 
@@ -103,21 +100,32 @@ export class StackGroup {
   drop(start: number, end: number): Parser<null>
   drop(start?: number, end?: number): Parser<null> {
     return (ctx) => {
-      const [_start, _end] = this.fixRange(ctx, start, end)
-      const next = produce(ctx, (draft) => {
-        const array = draft.stacks?.[this.name]
-        if (!array) return
-        array.splice(_start, _end - _start)
-      })
+      const next = { ...ctx, stacks: this.removeItem(ctx.stacks, start, end) }
       return success(null, [ctx.offset, ctx.offset], next)
     }
   }
 
-  private fixRange(ctx: ParseContext, start = 0, end = start) {
-    const array = ctx.stacks?.[this.name] || []
+  private fixRange(map: StackMap = {}, start = 0, end = start) {
+    const array = map[this.name] || []
     if (start < 0) start = array.length - start
     if (end < 0) end = array.length - end
     if (start > end) end = start
     return [array.length - end - 1, array.length - start] as const
+  }
+
+  private getItem(map: StackMap = {}, start?: number, end?: number) {
+    const [i, j] = this.fixRange(map, start, end)
+    const array = map[this.name]
+    if (!array?.length) throw new Error()
+    const text = array.slice(i, j).join('')
+    return text
+  }
+
+  private removeItem(map: StackMap = {}, start?: number, end?: number) {
+    const [i, j] = this.fixRange(map, start, end)
+    const res = { ...map }
+    const array = (res[this.name] = [...(res[this.name] || [])])
+    if (array.length) array.splice(i, j - i)
+    return res
   }
 }
