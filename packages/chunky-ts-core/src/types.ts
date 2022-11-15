@@ -1,5 +1,6 @@
 export type Parser<T> = (context: Readonly<ParseContext>) => ParseResult<T>
-export type ParserType<T extends Parser<any>> = T extends Parser<infer R> ? R : never
+export type LazyParser<T> = (() => Parser<T>) | Parser<T>
+export type ParserType<T extends LazyParser<any>> = T extends Parser<infer R> ? R : never
 
 export interface Source {
   name: string
