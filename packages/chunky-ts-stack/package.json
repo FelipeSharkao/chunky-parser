@@ -20,7 +20,6 @@
     "tsup": "^6.4.0"
   },
   "dependencies": {
-    "@chunky/core": "*",
-    "immer": "^9.0.16"
+    "@chunky/core": "*"
   }
 }
