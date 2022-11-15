@@ -1,4 +1,4 @@
-import { Parser } from '@/types'
+import { Parser, ParserType } from '@/types'
 import { failure, success } from '@/utils'
 
 /*
@@ -46,7 +46,7 @@ export function not<T>(parser: Parser<T>): Parser<null> {
  * Creates a parser that will match if any of its parsers mathes.
  * Parsers are tested in order of application, matching the first to succeede
  */
-export function oneOf<T>(...parsers: Parser<T>[]): Parser<T> {
+export function oneOf<T extends Parser<any>[]>(...parsers: T): Parser<ParserType<T[number]>> {
   return (ctx) => {
     const expected = [] as string[]
     for (const parser of parsers) {

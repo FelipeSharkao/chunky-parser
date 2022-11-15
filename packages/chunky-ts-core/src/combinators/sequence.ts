@@ -1,8 +1,8 @@
-import { Parser } from '@/types'
+import { Parser, ParserType } from '@/types'
 import { success } from '@/utils'
 
 type Inner<T extends Parser<any>[]> = {
-  [I in keyof T]: T[I] extends Parser<infer R> ? R : never
+  [I in keyof T]: ParserType<T[I]>
 }
 
 /*
