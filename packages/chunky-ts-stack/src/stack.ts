@@ -1,4 +1,4 @@
-import { failure, ParseContext, Parser, raw, str, success } from '@chunky/core'
+import { failure, LazyParser, ParseContext, Parser, raw, str, success } from '@chunky/core'
 
 import { StackMap } from '@/types'
 
@@ -11,7 +11,7 @@ export class StackGroup {
   /**
    * Creates a parser that adds the matched text to the top of the text
    */
-  push(parser: Parser<any>): Parser<string> {
+  push(parser: LazyParser<any>): Parser<string> {
     return (ctx) => {
       const result = raw(parser)(ctx)
       if (result.success) {
