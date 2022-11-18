@@ -1,18 +1,23 @@
 import { strict as assert } from 'node:assert'
 import { inspect } from 'node:util'
 
-import { ParseContext, Parser } from '@/types'
+import { LazyParser, ParseContext, ParserType, ParserValuesType } from '@/types'
+import { run } from '@/utils/parser'
 
-export function assertParser<T>(parser: Parser<T>, ctx: string | ParseContext, offset = 0) {
+export function assertParser<T, P>(
+  parser: LazyParser<T, P>,
+  ctx: string | ParseContext,
+  offset = 0
+) {
   if (typeof ctx == 'string') {
-    ctx = { source: { name: '', path: '', content: ctx }, offset }
+    ctx = { source: { name: '', path: '', content: ctx }, offset, payload: {} }
   } else {
     ctx = { ...ctx, offset }
   }
-  let result = parser(ctx)
+  let result = run(parser, ctx)
 
   return {
-    succeeds(length: number, value: T): ParseContext {
+    succeeds(length: number, value: T): ParseContext<P> {
       assert.ok(
         result.success,
         `Expect parser to succeed with value ${inspect(value)}, it failed instead`
@@ -37,7 +42,7 @@ export function assertParser<T>(parser: Parser<T>, ctx: string | ParseContext, o
       assert.ok(!result.success, 'Expect parser to fail, it succeeded instead')
 
       const expectedPos = offset + after
-      const actualPos = result.next.offset
+      const actualPos = result.offset
       assert.equal(
         actualPos,
         expectedPos,

@@ -1,14 +1,17 @@
-import { LazyParser, Parser, ParserType } from '@/types'
+import { LazyParser, Parser, ParserType, ParserValuesType } from '@/types'
 import { failure, run, success } from '@/utils'
 
+export type OptionalParser<T, P> = Parser<T | undefined, { [K in keyof P]?: P[K] | undefined }>
+export type OneOfParser<T extends LazyParser<any>> = Parser<ParserType<T>, ParserValuesType<T>>
+
 /*
- * Creates a parser that will match `null` instead of failing
+ * Creates a parser that will match `undefined` instead of failing
  */
-export function optional<T>(parser: LazyParser<T>): Parser<T | null> {
+export function optional<T, P>(parser: LazyParser<T, P>): OptionalParser<T, P> {
   return (ctx) => {
     const result = run(parser, ctx)
     if (!result.success) {
-      return success(null, [ctx.offset, ctx.offset], ctx)
+      return success(undefined, [ctx.offset, ctx.offset], ctx)
     }
     return result
   }
@@ -17,11 +20,11 @@ export function optional<T>(parser: LazyParser<T>): Parser<T | null> {
 /*
  * Creates a parser that will never consume any text
  */
-export function predicate<T>(parser: LazyParser<T>): Parser<T> {
+export function predicate<T, P>(parser: LazyParser<T, P>): Parser<T, P> {
   return (ctx) => {
     const result = run(parser, ctx)
     if (result.success) {
-      return { ...result, next: ctx }
+      return { ...result, next: { ...result.next, offset: ctx.offset } }
     }
     return result
   }
@@ -46,11 +49,11 @@ export function not<T>(parser: LazyParser<T>): Parser<null> {
  * Creates a parser that will match if any of its parsers mathes.
  * Parsers are tested in order of application, matching the first to succeede
  */
-export function oneOf<T extends LazyParser<any>[]>(...parsers: T): Parser<ParserType<T[number]>> {
+export function oneOf<T extends LazyParser<any>[]>(...parsers: T): OneOfParser<T[number]> {
   return (ctx) => {
     const expected = [] as string[]
     for (const parser of parsers) {
-      const result = run(parser, ctx)
+      const result = run(parser as OneOfParser<T[number]>, ctx)
       if (result.success) {
         return result
       } else {

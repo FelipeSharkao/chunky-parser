@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
+import { label } from '@/combinators/named'
 import { str } from '@/parsers'
 import { assertParser } from '@/utils'
 
@@ -8,22 +9,29 @@ import { not, oneOf, optional, predicate } from './choice'
 describe('optional', () => {
   const parser = optional(str('bana'))
 
-  it('results null instead of failing', () => {
+  it('results undefined instead of failing', () => {
     const src = 'banana'
     assertParser(parser, src, 0).succeeds(4, 'bana')
-    assertParser(parser, src, 2).succeeds(0, null)
+    assertParser(parser, src, 2).succeeds(0, undefined)
   })
 })
 
 describe('predicate', () => {
-  const parser = predicate(str('bana'))
-
   it('matches without moving the context', () => {
+    const parser = predicate(str('bana'))
     const src = 'banana'
     assertParser(parser, src, 0).succeeds(0, 'bana')
   })
 
+  it('keeps the payload of the original parser', () => {
+    const parser = predicate(label('str', str('bana')))
+    const src = 'banana'
+    const next = assertParser(parser, src, 0).succeeds(0, 'bana')
+    expect(next.payload.str).toBe('bana')
+  })
+
   it('fails when the original parser fails', () => {
+    const parser = predicate(str('bana'))
     const src = 'banana'
     assertParser(parser, src, 2).fails()
   })

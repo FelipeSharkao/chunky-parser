@@ -1,16 +1,23 @@
-import { LazyParser, LocationRange, Parser, Source } from '@/types'
+import { LazyParser, LocationRange, ParseContext, Parser } from '@/types'
 import { run } from '@/utils'
 
-export type ParserMapFunction<T, U> = (value: T, loc: LocationRange, source: Source) => U
+export type ParserMapFunction<T, U, P> = (
+  value: T,
+  loc: LocationRange,
+  context: ParseContext<P>
+) => U
 
 /**
  * Creates a new parser that maps a function on the result of a parser
  */
-export function map<T, U>(parser: LazyParser<T>, f: ParserMapFunction<T, U>): Parser<U> {
+export function map<T, U, P>(
+  parser: LazyParser<T, P>,
+  f: ParserMapFunction<T, U, P>
+): Parser<U, P> {
   return (ctx) => {
     const result = run(parser, ctx)
     if (result.success) {
-      return { ...result, value: f(result.value, result.loc, ctx.source) }
+      return { ...result, value: f(result.value, result.loc, result.next) }
     }
     return result
   }
