@@ -23,10 +23,10 @@ describe('seq', () => {
   it('merges the payload of every parser', () => {
     const parser = seq(label('num1', num), label('num2', num), label('alpha', alpha))
     const src = '12ab'
-    const next = assertParser(parser, src, 0).succeeds(3, ['1', '2', 'a'])
-    expect(next.payload.num1).toBe('1')
-    expect(next.payload.num2).toBe('2')
-    expect(next.payload.alpha).toBe('a')
+    const res = assertParser(parser, src, 0).succeeds(3, ['1', '2', 'a'])
+    expect(res.payload.num1).toBe('1')
+    expect(res.payload.num2).toBe('2')
+    expect(res.payload.alpha).toBe('a')
   })
 })
 
@@ -54,12 +54,12 @@ describe('many', () => {
   it('accumulates the payload into a arrays', () => {
     const parser = many(seq(label('a', num), label('b', num)), 2, 3)
     const src = '123456789'
-    const next = assertParser(parser, src, 0).succeeds(6, [
+    const res = assertParser(parser, src, 0).succeeds(6, [
       ['1', '2'],
       ['3', '4'],
       ['5', '6'],
     ])
-    assert.deepEqual(next.payload, { a: ['1', '3', '5'], b: ['2', '4', '6'] })
+    assert.deepEqual(res.payload, { a: ['1', '3', '5'], b: ['2', '4', '6'] })
   })
 })
 
@@ -77,13 +77,13 @@ describe('many0', () => {
   it('accumulates the payload into a arrays', () => {
     const parser = many0(seq(label('a', num), label('b', num)))
     const src = '123456789'
-    const next = assertParser(parser, src, 0).succeeds(8, [
+    const res = assertParser(parser, src, 0).succeeds(8, [
       ['1', '2'],
       ['3', '4'],
       ['5', '6'],
       ['7', '8'],
     ])
-    assert.deepEqual(next.payload, { a: ['1', '3', '5', '7'], b: ['2', '4', '6', '8'] })
+    assert.deepEqual(res.payload, { a: ['1', '3', '5', '7'], b: ['2', '4', '6', '8'] })
   })
 })
 
@@ -105,12 +105,12 @@ describe('many1', () => {
   it('accumulates the payload into a arrays', () => {
     const parser = many1(seq(label('a', num), label('b', num)))
     const src = '123456789'
-    const next = assertParser(parser, src, 0).succeeds(8, [
+    const res = assertParser(parser, src, 0).succeeds(8, [
       ['1', '2'],
       ['3', '4'],
       ['5', '6'],
       ['7', '8'],
     ])
-    assert.deepEqual(next.payload, { a: ['1', '3', '5', '7'], b: ['2', '4', '6', '8'] })
+    assert.deepEqual(res.payload, { a: ['1', '3', '5', '7'], b: ['2', '4', '6', '8'] })
   })
 })

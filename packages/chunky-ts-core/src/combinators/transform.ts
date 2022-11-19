@@ -1,11 +1,7 @@
-import { LazyParser, LocationRange, ParseContext, Parser } from '@/types'
+import { LazyParser, LocationRange, ParseContext, Parser, ParseSuccess } from '@/types'
 import { run } from '@/utils'
 
-export type ParserMapFunction<T, U, P> = (
-  value: T,
-  loc: LocationRange,
-  context: ParseContext<P>
-) => U
+export type ParserMapFunction<T, U, P> = (result: ParseSuccess<T, P>) => U
 
 /**
  * Creates a new parser that maps a function on the result of a parser
@@ -17,7 +13,7 @@ export function map<T, U, P>(
   return (ctx) => {
     const result = run(parser, ctx)
     if (result.success) {
-      return { ...result, value: f(result.value, result.loc, result.next) }
+      return { ...result, value: f(result) }
     }
     return result
   }
@@ -26,7 +22,7 @@ export function map<T, U, P>(
 /**
  * Create a new parser that result the matched text of the parser, discaring its value
  */
-export function raw(parser: LazyParser<unknown>): Parser<string> {
+export function raw<P>(parser: LazyParser<unknown, P>): Parser<string, P> {
   return (ctx) => {
     const result = run(parser, ctx)
     if (result.success) {

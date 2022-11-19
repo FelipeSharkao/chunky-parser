@@ -6,7 +6,7 @@ export * from '@/types'
 export * from '@/utils'
 
 export function parse<T>(parser: Parser<T>, source: Source): T {
-  const result = parser({ source, offset: 0, payload: {} })
+  const result = parser({ source, offset: 0 })
   if (result.success) {
     return result.value
   }

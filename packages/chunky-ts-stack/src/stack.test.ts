@@ -24,27 +24,27 @@ describe('StackGroup', () => {
     it('matches the text at the top of the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.peek(), ctx, 16).succeeds(4, 'Bar ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.peek(), ctx, 16).succeeds(4, 'Bar ').next
       assertParser(stack.peek(), ctx, 8).fails()
     })
 
     it('matches the text at the n-th position of the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.peek(1), ctx, 20).succeeds(4, 'Foo ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.peek(1), ctx, 20).succeeds(4, 'Foo ').next
       assertParser(stack.peek(1), ctx, 8).fails()
     })
 
     it('matches the text at a range of the stack, from first inserted to last inserted', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 8).succeeds(4, 'Quz ')
-      ctx = assertParser(stack.push(word), ctx, 12).succeeds(4, 'Qux ')
-      ctx = assertParser(stack.peek(0, 1), ctx, 24).succeeds(8, 'Quz Qux ')
+      ctx = assertParser(stack.push(word), ctx, 8).succeeds(4, 'Quz ').next
+      ctx = assertParser(stack.push(word), ctx, 12).succeeds(4, 'Qux ').next
+      ctx = assertParser(stack.peek(0, 1), ctx, 24).succeeds(8, 'Quz Qux ').next
       assertParser(stack.peek(0, 1), ctx, 4).fails()
     })
 
@@ -56,10 +56,10 @@ describe('StackGroup', () => {
     it('does not removes the item matched from the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.peek(), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.peek(), ctx, 16).succeeds(4, 'Bar ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.peek(), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.peek(), ctx, 16).succeeds(4, 'Bar ').next
       assertParser(stack.peek(), ctx, 20).fails()
     })
   })
@@ -68,26 +68,26 @@ describe('StackGroup', () => {
     it('matches the text at the top of the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.pop(), ctx, 16).succeeds(4, 'Bar ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.pop(), ctx, 16).succeeds(4, 'Bar ').next
       assertParser(stack.pop(), ctx, 8).fails()
     })
 
     it('matches the text at the n-th position of the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.pop(1), ctx, 20).succeeds(4, 'Foo ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.pop(1), ctx, 20).succeeds(4, 'Foo ').next
     })
 
     it('matches the text at a range of the stack, from first inserted to last inserted', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 8).succeeds(4, 'Quz ')
-      ctx = assertParser(stack.push(word), ctx, 12).succeeds(4, 'Qux ')
-      ctx = assertParser(stack.pop(0, 1), ctx, 24).succeeds(8, 'Quz Qux ')
+      ctx = assertParser(stack.push(word), ctx, 8).succeeds(4, 'Quz ').next
+      ctx = assertParser(stack.push(word), ctx, 12).succeeds(4, 'Qux ').next
+      ctx = assertParser(stack.pop(0, 1), ctx, 24).succeeds(8, 'Quz Qux ').next
       assertParser(stack.pop(0, 1), ctx, 4).fails()
     })
 
@@ -99,19 +99,19 @@ describe('StackGroup', () => {
     it('removes the item matched from the stack', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.pop(), ctx, 16).succeeds(4, 'Bar ')
-      ctx = assertParser(stack.pop(), ctx, 20).succeeds(4, 'Foo ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.pop(), ctx, 16).succeeds(4, 'Bar ').next
+      ctx = assertParser(stack.pop(), ctx, 20).succeeds(4, 'Foo ').next
     })
 
     it('does not remove the item if the parent parser fails', () => {
       const stack = new StackGroup('test')
       let ctx: ParseContext | string = src
-      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ')
-      ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, 'Foo ')
+      ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, 'Foo ').next
+      ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, 'Foo ').next
       assertParser(seq(stack.pop(), str('!')), ctx, 20).fails(4)
-      ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, 'Foo ')
+      ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, 'Foo ').next
     })
   })
 })

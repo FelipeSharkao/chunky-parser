@@ -26,8 +26,8 @@ describe('predicate', () => {
   it('keeps the payload of the original parser', () => {
     const parser = predicate(label('str', str('bana')))
     const src = 'banana'
-    const next = assertParser(parser, src, 0).succeeds(0, 'bana')
-    expect(next.payload.str).toBe('bana')
+    const res = assertParser(parser, src, 0).succeeds(0, 'bana')
+    expect(res.payload.str).toBe('bana')
   })
 
   it('fails when the original parser fails', () => {

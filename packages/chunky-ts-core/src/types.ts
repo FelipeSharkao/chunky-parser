@@ -2,7 +2,7 @@ export type Parser<T, P = {}> = (context: Readonly<ParseContext>) => ParseResult
 export type LazyParser<T, P = {}> = (() => Parser<T, P>) | Parser<T, P>
 
 export type ParserType<T extends LazyParser<any>> = T extends LazyParser<infer R> ? R : never
-export type ParserValuesType<T extends LazyParser<any, any>> = T extends LazyParser<any, infer R>
+export type ParserPayloadType<T extends LazyParser<any, any>> = T extends LazyParser<any, infer R>
   ? R
   : never
 
@@ -14,18 +14,18 @@ export interface Source {
 
 export type LocationRange = readonly [number, number]
 
-export interface ParseContext<P = {}> {
+export interface ParseContext {
   source: Source
   offset: number
-  payload: P
 }
 
 export type ParseResult<T, P = {}> = ParseSuccess<T, P> | ParseFailure
 export type ParseSuccess<T, P = {}> = Readonly<{
   success: true
   value: T
+  payload: P
   loc: LocationRange
-  next: ParseContext<P>
+  next: ParseContext
 }>
 export type ParseFailure = Readonly<{
   success: false

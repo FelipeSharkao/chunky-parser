@@ -1,12 +1,23 @@
-import { Intersection } from '@/ts-utils'
-import { LazyParser, ParseContext, Parser, ParserType, ParserValuesType } from '@/types'
+import { Assign, Mutable } from '@/ts-utils'
+import { LazyParser, ParseContext, Parser, ParserType, ParserPayloadType } from '@/types'
 import { run, success } from '@/utils'
 
-export type MergedParser<T extends LazyParser<any>[]> = Parser<
+type MergedParserPayload<T extends readonly LazyParser<any, any>[]> = T extends [
+  infer R,
+  ...infer RR
+]
+  ? R extends LazyParser<any>
+    ? RR extends LazyParser<any>[]
+      ? Assign<ParserPayloadType<R>, MergedParserPayload<RR>>
+      : ParserPayloadType<R>
+    : {}
+  : {}
+
+export type MergedParser<T extends readonly LazyParser<any>[]> = Parser<
   {
     [I in keyof T]: ParserType<T[I]>
   },
-  Intersection<ParserValuesType<T[number]>> extends infer R ? { [K in keyof R]: R[K] } : never
+  MergedParserPayload<T>
 >
 
 export type RepeatedParser<T, P> = Parser<T[], { [K in keyof P & string]: P[K][] }>
@@ -14,21 +25,23 @@ export type RepeatedParser<T, P> = Parser<T[], { [K in keyof P & string]: P[K][]
 /*
  * Creates a parser that will match when all of its parsers matches in sequence
  */
-export function seq<T extends LazyParser<any>[]>(...parsers: T): MergedParser<T> {
-  return ((ctx) => {
-    const value = [] as any[]
+export function seq<T extends readonly LazyParser<any>[]>(...parsers: T): MergedParser<T> {
+  return (ctx) => {
+    const value = [] as unknown as Mutable<ParserType<MergedParser<T>>>
+    let payload = {} as MergedParserPayload<T>
     let next = ctx
     for (const parser of parsers) {
       const result = run(parser, next)
       if (result.success) {
         value.push(result.value)
         next = result.next
+        payload = { ...payload, ...result.payload }
       } else {
         return result
       }
     }
-    return success(value, [ctx.offset, next.offset], next)
-  }) as MergedParser<T>
+    return { ...success(value, [ctx.offset, next.offset], next), payload }
+  }
 }
 
 /*
@@ -39,32 +52,31 @@ export function many<T, P>(
   min: number,
   max: number
 ): RepeatedParser<T, P> {
-  type Values = ParserValuesType<RepeatedParser<T, P>>
+  type Values = ParserPayloadType<RepeatedParser<T, P>>
 
   return (ctx) => {
     const value = [] as T[]
-    let next = ctx as ParseContext<Values>
+    const payload = {} as Values
+    let next = ctx
     for (let i = 0; i < max; i++) {
       const result = run(parser, next)
       if (result.success) {
         value.push(result.value)
+        next = result.next
 
-        const values = { ...next.payload } as Values
-        for (const key in result.next.payload) {
-          if (!values[key]) {
-            values[key] = []
+        for (const key in result.payload) {
+          if (!payload[key]) {
+            payload[key] = []
           }
-          values[key].push(result.next.payload[key as Extract<keyof P, string>])
+          payload[key].push(result.payload[key as Extract<keyof P, string>])
         }
-
-        next = { ...result.next, payload: values }
       } else if (value.length < min) {
         return result
       } else {
         break
       }
     }
-    return success(value, [ctx.offset, next.offset], next)
+    return { ...success(value, [ctx.offset, next.offset], next), payload }
   }
 }
 

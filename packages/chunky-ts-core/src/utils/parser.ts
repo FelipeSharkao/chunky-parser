@@ -1,4 +1,4 @@
-import { LazyParser, ParseContext, ParseResult, ParserType, ParserValuesType } from '@/types'
+import { LazyParser, ParseContext, ParseResult } from '@/types'
 
 /**
  * Runs a parser with a context and returns its result. Useful to handle lazy parsers

@@ -26,8 +26,8 @@ describe('label', () => {
   })
 
   it('add the resulting value into the payload', () => {
-    const next = assertParser(parser, 'foo bar').succeeds(3, 'foo')
-    expect(next.payload.test).toBe('foo')
+    const res = assertParser(parser, 'foo bar').succeeds(3, 'foo')
+    expect(res.payload.test).toBe('foo')
   })
 })
 
@@ -40,7 +40,7 @@ describe('set', () => {
   })
 
   it('add the resulting value into the payload', () => {
-    const next = assertParser(parser, 'foo bar').succeeds(3, 'foo')
-    expect(next.payload.foo).toBe('bar')
+    const res = assertParser(parser, 'foo bar').succeeds(3, 'foo')
+    expect(res.payload.foo).toBe('bar')
   })
 })

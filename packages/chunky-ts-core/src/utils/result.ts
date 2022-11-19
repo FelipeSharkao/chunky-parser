@@ -5,12 +5,8 @@ import { move } from './context'
 /**
  * Create a success ParseResult
  */
-export function success<T, P>(
-  value: T,
-  loc: LocationRange,
-  next: ParseContext<P>
-): ParseSuccess<T, P> {
-  return { success: true, value, loc, next }
+export function success<T>(value: T, loc: LocationRange, next: ParseContext): ParseSuccess<T> {
+  return { success: true, value, payload: {}, loc, next }
 }
 
 /**
@@ -23,7 +19,7 @@ export function failure(context: ParseContext, expected: string[] = []): ParseFa
 /**
  * Create a success ParseResult that consumes N characters of the buffer
  */
-export function next<P>(context: ParseContext<P>, n: number): ParseResult<string, P> {
+export function next(context: ParseContext, n: number): ParseResult<string> {
   if (n <= 0) throw new Error('expected a positive number')
   const loc: LocationRange = [context.offset, context.offset + n]
   return success(context.source.content.slice(...loc), loc, move(context, n))

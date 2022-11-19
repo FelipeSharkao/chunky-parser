@@ -1,8 +1,11 @@
-import { LazyParser, Parser, ParserType, ParserValuesType } from '@/types'
+import { LazyParser, Parser, ParserType, ParserPayloadType } from '@/types'
 import { failure, run, success } from '@/utils'
 
 export type OptionalParser<T, P> = Parser<T | undefined, { [K in keyof P]?: P[K] | undefined }>
-export type OneOfParser<T extends LazyParser<any>> = Parser<ParserType<T>, ParserValuesType<T>>
+export type OneOfParser<T extends LazyParser<any, any>> = Parser<
+  ParserType<T>,
+  ParserPayloadType<T>
+>
 
 /*
  * Creates a parser that will match `undefined` instead of failing
@@ -34,7 +37,7 @@ export function predicate<T, P>(parser: LazyParser<T, P>): Parser<T, P> {
  * Creates a parser that will succeede if the original parser fails,
  * and will fail if the original parser succeedes.
  */
-export function not<T>(parser: LazyParser<T>): Parser<null> {
+export function not(parser: LazyParser<any, any>): Parser<null> {
   return (ctx) => {
     const result = run(parser, ctx)
     if (result.success) {
@@ -49,7 +52,7 @@ export function not<T>(parser: LazyParser<T>): Parser<null> {
  * Creates a parser that will match if any of its parsers mathes.
  * Parsers are tested in order of application, matching the first to succeede
  */
-export function oneOf<T extends LazyParser<any>[]>(...parsers: T): OneOfParser<T[number]> {
+export function oneOf<T extends LazyParser<any, any>[]>(...parsers: T): OneOfParser<T[number]> {
   return (ctx) => {
     const expected = [] as string[]
     for (const parser of parsers) {

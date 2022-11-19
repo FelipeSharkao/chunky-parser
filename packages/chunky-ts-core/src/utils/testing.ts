@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { inspect } from 'node:util'
 
-import { LazyParser, ParseContext, ParserType, ParserValuesType } from '@/types'
+import { LazyParser, ParseContext, ParseFailure, ParseSuccess } from '@/types'
 import { run } from '@/utils/parser'
 
 export function assertParser<T, P>(
@@ -10,14 +10,14 @@ export function assertParser<T, P>(
   offset = 0
 ) {
   if (typeof ctx == 'string') {
-    ctx = { source: { name: '', path: '', content: ctx }, offset, payload: {} }
+    ctx = { source: { name: '', path: '', content: ctx }, offset }
   } else {
     ctx = { ...ctx, offset }
   }
   let result = run(parser, ctx)
 
   return {
-    succeeds(length: number, value: T): ParseContext<P> {
+    succeeds(length: number, value: T): ParseSuccess<T, P> {
       assert.ok(
         result.success,
         `Expect parser to succeed with value ${inspect(value)}, it failed instead`
@@ -36,9 +36,9 @@ export function assertParser<T, P>(
         `Expected parser to result in ${inspect(value)}, it results in ${result.value} instead.`
       )
 
-      return result.next
+      return result
     },
-    fails(after = 0, reason: string[] = []): void {
+    fails(after = 0, reason: string[] = []): ParseFailure {
       assert.ok(!result.success, 'Expect parser to fail, it succeeded instead')
 
       const expectedPos = offset + after
@@ -59,6 +59,8 @@ export function assertParser<T, P>(
           actualReason
         )} instead.`
       )
+
+      return result
     },
   }
 }
