@@ -1,9 +1,9 @@
 {
-  "trailingComma": "es5",
-  "semi": false,
-  "singleQuote": true,
-  "quoteProps": "consistent",
-  "importOrderSeparation": true,
-  "importOrder": ["<THIRD_PARTY_MODULES>", "^@\\w", "^@", "^[./]"],
-  "plugins": ["@trivago/prettier-plugin-sort-imports"]
+    "trailingComma": "es5",
+    "semi": false,
+    "singleQuote": false,
+    "quoteProps": "consistent",
+    "importOrderSeparation": true,
+    "importOrder": ["<THIRD_PARTY_MODULES>", "^@\\w", "^@", "^[./]"],
+    "plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

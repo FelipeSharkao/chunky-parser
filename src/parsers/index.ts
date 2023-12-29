@@ -1,2 +1,2 @@
-export * from './char'
-export * from './text'
+export * from "./char"
+export * from "./text"

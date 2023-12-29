@@ -1,26 +1,26 @@
 {
-  "name": "chunky",
-  "version": "1.0.0",
-  "description": "Lightweight parser combinator library for TypeScript",
-  "author": "Felipe Nascimento <felipenasgomes@gmail.com>",
-  "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "preinstall": "git config diff.lockb.textconv bun; git config diff.lockb.binary true",
-    "build": "bun build.ts",
-    "test": "bun test"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@typescript-eslint/eslint-plugin": "^6.16.0",
-    "@typescript-eslint/parser": "^6.16.0",
-    "bun-plugin-dts": "^0.2.1",
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^8.56.0",
-    "typescript": "^5.0.0"
-  }
+    "name": "chunky",
+    "version": "1.0.0",
+    "description": "Lightweight parser combinator library for TypeScript",
+    "author": "Felipe Nascimento <felipenasgomes@gmail.com>",
+    "license": "MIT",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "preinstall": "git config diff.lockb.textconv bun; git config diff.lockb.binary true",
+        "build": "bun build.ts",
+        "test": "bun test"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@typescript-eslint/eslint-plugin": "^6.16.0",
+        "@typescript-eslint/parser": "^6.16.0",
+        "bun-plugin-dts": "^0.2.1",
+        "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+        "eslint": "^8.56.0",
+        "typescript": "^5.0.0"
+    }
 }
