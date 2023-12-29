@@ -1,13 +1,15 @@
+import type { UnknownRecord } from "type-fest"
+
 import type { LazyParser, Parser, ParseSuccess } from "@/types"
 import { run } from "@/utils"
 
 /**
  * Creates a new parser that maps a function on the result of a parser
  */
-export function map<T, U, P>(
-    parser: LazyParser<T, P>,
-    f: (result: ParseSuccess<T, P>) => U
-): Parser<U, P> {
+export function map<T, U, TPayload extends UnknownRecord>(
+    parser: LazyParser<T, TPayload>,
+    f: (result: ParseSuccess<T, TPayload>) => U
+): Parser<U, TPayload> {
     return (ctx) => {
         const result = run(parser, ctx)
         if (result.success) {
@@ -18,9 +20,11 @@ export function map<T, U, P>(
 }
 
 /**
- * Create a new parser that result the matched text of the parser, discaring its value
+ * Create a new parser that result the matched text of the parser, discarding its value
  */
-export function raw<P>(parser: LazyParser<unknown, P>): Parser<string, P> {
+export function raw<TPayload extends UnknownRecord>(
+    parser: LazyParser<unknown, TPayload>
+): Parser<string, TPayload> {
     return (ctx) => {
         const result = run(parser, ctx)
         if (result.success) {

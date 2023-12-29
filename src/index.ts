@@ -2,7 +2,6 @@ import type { Parser, Source } from "@/types"
 
 export * from "@/combinators"
 export * from "@/parsers"
-export * from "@/stack"
 export * from "@/types"
 export * from "@/utils"
 

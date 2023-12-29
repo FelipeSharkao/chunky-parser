@@ -2,7 +2,7 @@ import type { Parser } from "@/types"
 import { next, failure } from "@/utils"
 
 /**
- * Creates a parser that mathes a specific string
+ * Creates a parser that matches a specific string
  */
 export function str(value: string): Parser<string> {
     return (ctx) => {
@@ -30,14 +30,14 @@ export function re(regexp: RegExp): Parser<string> {
 }
 
 /**
- * Matches a character with the unicode number property
+ * Matches a character with the Unicode number property
  */
 export const unum = re(/\p{N}/u)
 /**
- * Matches a character with the unicode letter property
+ * Matches a character with the Unicode letter property
  */
 export const ualpha = re(/\p{L}/u)
 /**
- * Matches a character with the unicode letter or number property
+ * Matches a character with the Unicode letter or number property
  */
 export const ualphanum = re(/[\p{L}\p{N}]/u)

@@ -82,7 +82,7 @@ describe("StackGroup", () => {
             let ctx: ParseContext | string = src
             ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, "Foo ").next
             ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, "Bar ").next
-            ctx = assertParser(stack.pop(1), ctx, 20).succeeds(4, "Foo ").next
+            assertParser(stack.pop(1), ctx, 20).succeeds(4, "Foo ")
         })
 
         it("matches the text at a range of the stack, from first inserted to last inserted", () => {
@@ -105,7 +105,7 @@ describe("StackGroup", () => {
             ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, "Foo ").next
             ctx = assertParser(stack.push(word), ctx, 4).succeeds(4, "Bar ").next
             ctx = assertParser(stack.pop(), ctx, 16).succeeds(4, "Bar ").next
-            ctx = assertParser(stack.pop(), ctx, 20).succeeds(4, "Foo ").next
+            assertParser(stack.pop(), ctx, 20).succeeds(4, "Foo ")
         })
 
         it("does not remove the item if the parent parser fails", () => {
@@ -114,7 +114,7 @@ describe("StackGroup", () => {
             ctx = assertParser(stack.push(word), ctx, 0).succeeds(4, "Foo ").next
             ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, "Foo ").next
             assertParser(seq(stack.pop(), str("!")), ctx, 20).fails(4)
-            ctx = assertParser(stack.peek(), ctx, 20).succeeds(4, "Foo ").next
+            assertParser(stack.peek(), ctx, 20).succeeds(4, "Foo ")
         })
     })
 })

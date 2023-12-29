@@ -1,7 +1,7 @@
 import type { ParseContext } from "@/types"
 
 /**
- * Moves the conext position
+ * Moves the context position
  */
 export function move(context: ParseContext, n: number): ParseContext {
     return {

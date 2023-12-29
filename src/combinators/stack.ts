@@ -1,9 +1,8 @@
-import { raw } from "@/combinators"
 import { str } from "@/parsers"
-import type { LazyParser, Parser } from "@/types"
+import type { LazyParser, Parser, StackMap } from "@/types"
 import { failure, success } from "@/utils"
 
-import type { StackMap } from "./types"
+import { raw } from "./transform"
 
 /**
  * Group of combinators that stores the parsed text, allowing for complex, context-aware syntaxes
@@ -14,7 +13,7 @@ export class StackGroup {
     /**
      * Creates a parser that adds the matched text to the top of the text
      */
-    push(parser: LazyParser<any>): Parser<string> {
+    push(parser: LazyParser<unknown>): Parser<string> {
         return (ctx) => {
             const result = raw(parser)(ctx)
             if (result.success) {

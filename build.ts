@@ -5,5 +5,5 @@ await Bun.build({
     entrypoints: ["./src/index.ts"],
     outdir: "./dist",
     splitting: true,
-    plugins: [dts()],
+    plugins: [dts({ libraries: { inlinedLibraries: ["type-fest"] } })],
 })

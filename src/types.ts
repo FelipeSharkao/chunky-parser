@@ -1,10 +1,21 @@
-import type { StackMap } from "./stack"
+import type { EmptyObject, UnknownRecord } from "type-fest"
 
-export type Parser<T, P = {}> = (context: Readonly<ParseContext>) => ParseResult<T, P>
-export type LazyParser<T, P = {}> = (() => Parser<T, P>) | Parser<T, P>
+export type Parser<T, TPayload extends UnknownRecord = EmptyObject> = (
+    context: Readonly<ParseContext>
+) => ParseResult<T, TPayload>
 
-export type ParserType<T extends LazyParser<any>> = T extends LazyParser<infer R> ? R : never
-export type ParserPayloadType<T extends LazyParser<any, any>> = T extends LazyParser<any, infer R>
+export type LazyParser<T, TPayload extends UnknownRecord = EmptyObject> =
+    | (() => Parser<T, TPayload>)
+    | Parser<T, TPayload>
+
+export type ParserType<T extends LazyParser<unknown, UnknownRecord>> = T extends LazyParser<infer R>
+    ? R
+    : never
+
+export type ParserPayloadType<T extends LazyParser<unknown, UnknownRecord>> = T extends LazyParser<
+    unknown,
+    infer R
+>
     ? R
     : never
 
@@ -22,17 +33,23 @@ export interface ParseContext {
     stacks?: StackMap
 }
 
-export type ParseResult<T, P = {}> = ParseSuccess<T, P> | ParseFailure
-export type ParseSuccess<T, P = {}> = Readonly<{
+export type ParseResult<T, TPayload extends UnknownRecord = EmptyObject> =
+    | ParseSuccess<T, TPayload>
+    | ParseFailure
+
+export type ParseSuccess<T, TPayload extends UnknownRecord = EmptyObject> = Readonly<{
     success: true
     value: T
-    payload: P
+    payload: TPayload
     loc: LocationRange
     next: ParseContext
 }>
+
 export type ParseFailure = Readonly<{
     success: false
     source: Source
     offset: number
     expected: string[]
 }>
+
+export type StackMap = Record<string, string[] | undefined>

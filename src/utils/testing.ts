@@ -1,11 +1,12 @@
 import { strict as assert } from "node:assert"
 import { inspect } from "node:util"
+import type { UnknownRecord } from "type-fest"
 
 import type { LazyParser, ParseContext, ParseFailure, ParseSuccess } from "@/types"
 import { run } from "@/utils/parser"
 
-export function assertParser<T, P>(
-    parser: LazyParser<T, P>,
+export function assertParser<T, TPayload extends UnknownRecord>(
+    parser: LazyParser<T, TPayload>,
     ctx: string | ParseContext,
     offset = 0
 ) {
@@ -14,10 +15,10 @@ export function assertParser<T, P>(
     } else {
         ctx = { ...ctx, offset }
     }
-    let result = run(parser, ctx)
+    const result = run(parser, ctx)
 
     return {
-        succeeds(length: number, value: T): ParseSuccess<T, P> {
+        succeeds(length: number, value: T): ParseSuccess<T, TPayload> {
             assert.ok(
                 result.success,
                 `Expect parser to succeed with value ${inspect(value)}, it failed instead`
@@ -33,9 +34,9 @@ export function assertParser<T, P>(
             assert.deepEqual(
                 result.value,
                 value,
-                `Expected parser to result in ${inspect(value)}, it results in ${
+                `Expected parser to result in ${inspect(value)}, it results in ${inspect(
                     result.value
-                } instead.`
+                )} instead.`
             )
 
             return result
