@@ -1,5 +1,5 @@
 {
-    "name": "chunky",
+    "name": "chunky-parser",
     "version": "1.0.0",
     "description": "Lightweight parser combinator library for TypeScript",
     "author": "Felipe Nascimento <felipenasgomes@gmail.com>",
