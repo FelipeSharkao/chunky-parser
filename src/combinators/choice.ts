@@ -1,28 +1,17 @@
-import type { EmptyObject, UnknownRecord } from "type-fest"
+import { run, type LazyParser, type Parser, type ParserType } from "@/Parser"
 
-import type { LazyParser, Parser, ParserType, ParserPayloadType } from "@/types"
-import { failure, run, success } from "@/utils"
+export type OptionalParser<T> = Parser<T | null>
 
-export type OptionalParser<T, TPayload extends UnknownRecord> = Parser<
-    T | undefined,
-    TPayload | EmptyObject
->
-
-export type OneOfParser<T extends LazyParser<unknown, UnknownRecord>> = Parser<
-    ParserType<T>,
-    ParserPayloadType<T>
->
+export type OneOfParser<T extends LazyParser<unknown>> = Parser<ParserType<T>>
 
 /*
- * Creates a parser that will match `undefined` instead of failing
+ * Creates a parser that will match `null` instead of failing
  */
-export function optional<T, TPayload extends UnknownRecord>(
-    parser: LazyParser<T, TPayload>
-): OptionalParser<T, TPayload> {
-    return (ctx) => {
-        const result = run(parser, ctx)
+export function optional<T>(parser: LazyParser<T>): OptionalParser<T> {
+    return (input) => {
+        const result = run(parser, input)
         if (!result.success) {
-            return success(undefined, [ctx.offset, ctx.offset], ctx)
+            return input.success({ value: null })
         }
         return result
     }
@@ -31,13 +20,11 @@ export function optional<T, TPayload extends UnknownRecord>(
 /*
  * Creates a parser that will never consume any text
  */
-export function predicate<T, TPayload extends UnknownRecord>(
-    parser: LazyParser<T, TPayload>
-): Parser<T, TPayload> {
-    return (ctx) => {
-        const result = run(parser, ctx)
+export function predicate<T>(parser: LazyParser<T>): Parser<T> {
+    return (input) => {
+        const result = run(parser, input)
         if (result.success) {
-            return { ...result, next: { ...result.next, offset: ctx.offset } }
+            return input.success({ value: result.value, next: result.next })
         }
         return result
     }
@@ -47,13 +34,13 @@ export function predicate<T, TPayload extends UnknownRecord>(
  * Creates a parser that will succeed if the original parser fails, and will fail if the original
  * parser succeeds.
  */
-export function not(parser: LazyParser<unknown, UnknownRecord>): Parser<null> {
-    return (ctx) => {
-        const result = run(parser, ctx)
+export function not(parser: LazyParser<unknown>): Parser<null> {
+    return (input) => {
+        const result = run(parser, input)
         if (result.success) {
-            return failure(ctx, [])
+            return input.failure({ expected: [] })
         } else {
-            return success(null, [ctx.offset, ctx.offset], ctx)
+            return input.success({ value: null })
         }
     }
 }
@@ -62,19 +49,17 @@ export function not(parser: LazyParser<unknown, UnknownRecord>): Parser<null> {
  * Creates a parser that will match if any of its parsers matches. Parsers are tested in order of
  * application, matching the first to succeed
  */
-export function oneOf<T extends LazyParser<unknown, UnknownRecord>[]>(
-    ...parsers: T
-): OneOfParser<T[number]> {
-    return (ctx) => {
+export function oneOf<T extends LazyParser<unknown>[]>(...parsers: T): OneOfParser<T[number]> {
+    return (input) => {
         const expected = [] as string[]
         for (const parser of parsers) {
-            const result = run(parser as OneOfParser<T[number]>, ctx)
+            const result = run(parser as OneOfParser<T[number]>, input)
             if (result.success) {
                 return result
             } else {
                 expected.push(...result.expected)
             }
         }
-        return failure(ctx, expected)
+        return input.failure({ expected })
     }
 }

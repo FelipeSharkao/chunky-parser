@@ -8,11 +8,11 @@ describe("any", () => {
     it("matches any character", () => {
         const src = "ab12."
         assertParser(any, src).succeeds(1, "a")
-        assertParser(any, src, 1).succeeds(1, "b")
-        assertParser(any, src, 2).succeeds(1, "1")
-        assertParser(any, src, 3).succeeds(1, "2")
-        assertParser(any, src, 4).succeeds(1, ".")
-        assertParser(any, src, 5).fails()
+        assertParser(any, src, { offset: 1 }).succeeds(1, "b")
+        assertParser(any, src, { offset: 2 }).succeeds(1, "1")
+        assertParser(any, src, { offset: 3 }).succeeds(1, "2")
+        assertParser(any, src, { offset: 4 }).succeeds(1, ".")
+        assertParser(any, src, { offset: 5 }).fails(0, ["any character"])
     })
 })
 
@@ -22,11 +22,11 @@ describe("anyOf", () => {
     it("matches any of the given characters", () => {
         const src = "abra cadabra"
         assertParser(parser, src).succeeds(1, "a")
-        assertParser(parser, src, 1).succeeds(1, "b")
-        assertParser(parser, src, 2).fails()
-        assertParser(parser, src, 5).succeeds(1, "c")
-        assertParser(parser, src, 6).succeeds(1, "a")
-        assertParser(parser, src, 7).fails()
+        assertParser(parser, src, { offset: 1 }).succeeds(1, "b")
+        assertParser(parser, src, { offset: 2 }).fails(0, ['"a"', '"b"', '"c"'])
+        assertParser(parser, src, { offset: 5 }).succeeds(1, "c")
+        assertParser(parser, src, { offset: 6 }).succeeds(1, "a")
+        assertParser(parser, src, { offset: 7 }).fails(0, ['"a"', '"b"', '"c"'])
     })
 })
 
@@ -36,13 +36,14 @@ describe("anyIn", () => {
 
         const src = "ab12."
         assertParser(parser, src).succeeds(1, "a")
-        assertParser(parser, src, 1).succeeds(1, "b")
-        assertParser(parser, src, 2).fails()
+        assertParser(parser, src, { offset: 1 }).succeeds(1, "b")
+        assertParser(parser, src, { offset: 2 }).fails(0, ['any character between "a" and "m"'])
+
         parser = anyIn("09")
 
-        assertParser(parser, src, 2).succeeds(1, "1")
-        assertParser(parser, src, 3).succeeds(1, "2")
-        assertParser(parser, src, 4).fails()
+        assertParser(parser, src, { offset: 2 }).succeeds(1, "1")
+        assertParser(parser, src, { offset: 3 }).succeeds(1, "2")
+        assertParser(parser, src, { offset: 4 }).fails(0, ['any character between "0" and "9"'])
     })
 })
 
@@ -50,11 +51,11 @@ describe("num", () => {
     it("matches any ASCII numeric character", () => {
         const src = "12ab."
         assertParser(num, src).succeeds(1, "1")
-        assertParser(num, src, 1).succeeds(1, "2")
-        assertParser(num, src, 2).fails()
-        assertParser(num, src, 3).fails()
-        assertParser(num, src, 4).fails()
-        assertParser(num, src, 5).fails()
+        assertParser(num, src, { offset: 1 }).succeeds(1, "2")
+        assertParser(num, src, { offset: 2 }).fails(0, ['any character between "0" and "9"'])
+        assertParser(num, src, { offset: 3 }).fails(0, ['any character between "0" and "9"'])
+        assertParser(num, src, { offset: 4 }).fails(0, ['any character between "0" and "9"'])
+        assertParser(num, src, { offset: 5 }).fails(0, ['any character between "0" and "9"'])
     })
 })
 
@@ -62,11 +63,23 @@ describe("alpha", () => {
     it("matches any ASCII alphabetic character", () => {
         const src = "ab12."
         assertParser(alpha, src).succeeds(1, "a")
-        assertParser(alpha, src, 1).succeeds(1, "b")
-        assertParser(alpha, src, 2).fails()
-        assertParser(alpha, src, 3).fails()
-        assertParser(alpha, src, 4).fails()
-        assertParser(alpha, src, 5).fails()
+        assertParser(alpha, src, { offset: 1 }).succeeds(1, "b")
+        assertParser(alpha, src, { offset: 2 }).fails(0, [
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
+        assertParser(alpha, src, { offset: 3 }).fails(0, [
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
+        assertParser(alpha, src, { offset: 4 }).fails(0, [
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
+        assertParser(alpha, src, { offset: 5 }).fails(0, [
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
     })
 })
 
@@ -74,10 +87,18 @@ describe("alphanum", () => {
     it("matches any ASCII alphanumeric character", () => {
         const src = "ab12."
         assertParser(alphanum, src).succeeds(1, "a")
-        assertParser(alphanum, src, 1).succeeds(1, "b")
-        assertParser(alphanum, src, 2).succeeds(1, "1")
-        assertParser(alphanum, src, 3).succeeds(1, "2")
-        assertParser(alphanum, src, 4).fails()
-        assertParser(alphanum, src, 5).fails()
+        assertParser(alphanum, src, { offset: 1 }).succeeds(1, "b")
+        assertParser(alphanum, src, { offset: 2 }).succeeds(1, "1")
+        assertParser(alphanum, src, { offset: 3 }).succeeds(1, "2")
+        assertParser(alphanum, src, { offset: 4 }).fails(0, [
+            'any character between "0" and "9"',
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
+        assertParser(alphanum, src, { offset: 5 }).fails(0, [
+            'any character between "0" and "9"',
+            'any character between "A" and "Z"',
+            'any character between "a" and "z"',
+        ])
     })
 })

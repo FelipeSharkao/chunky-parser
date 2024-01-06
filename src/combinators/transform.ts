@@ -1,17 +1,12 @@
-import type { UnknownRecord } from "type-fest"
-
-import type { LazyParser, Parser, ParseSuccess } from "@/types"
-import { run } from "@/utils"
+import type { ParseSuccess } from "@/ParseResult"
+import { run, type LazyParser, type Parser } from "@/Parser"
 
 /**
  * Creates a new parser that maps a function on the result of a parser
  */
-export function map<T, U, TPayload extends UnknownRecord>(
-    parser: LazyParser<T, TPayload>,
-    f: (result: ParseSuccess<T, TPayload>) => U
-): Parser<U, TPayload> {
-    return (ctx) => {
-        const result = run(parser, ctx)
+export function map<T, U>(parser: LazyParser<T>, f: (result: ParseSuccess<T>) => U): Parser<U> {
+    return (input) => {
+        const result = run(parser, input)
         if (result.success) {
             return { ...result, value: f(result) }
         }
@@ -22,13 +17,11 @@ export function map<T, U, TPayload extends UnknownRecord>(
 /**
  * Create a new parser that result the matched text of the parser, discarding its value
  */
-export function raw<TPayload extends UnknownRecord>(
-    parser: LazyParser<unknown, TPayload>
-): Parser<string, TPayload> {
-    return (ctx) => {
-        const result = run(parser, ctx)
+export function raw(parser: LazyParser<unknown>): Parser<string> {
+    return (input) => {
+        const result = run(parser, input)
         if (result.success) {
-            return { ...result, value: ctx.source.content.slice(ctx.offset, result.next.offset) }
+            return { ...result, value: input.source.content.slice(...result.loc) }
         }
         return result
     }

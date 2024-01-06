@@ -1,15 +1,14 @@
-import type { Parser } from "@/types"
-import { next, failure } from "@/utils"
+import type { Parser } from "@/Parser"
 
 /**
  * Creates a parser that matches a specific string
  */
 export function str(value: string): Parser<string> {
-    return (ctx) => {
-        if (ctx.source.content.startsWith(value, ctx.offset)) {
-            return next(ctx, value.length)
+    return (input) => {
+        if (input.startsWith(value)) {
+            return input.success({ value, length: value.length })
         }
-        return failure(ctx)
+        return input.failure({ expected: [JSON.stringify(value)] })
     }
 }
 
@@ -17,15 +16,12 @@ export function str(value: string): Parser<string> {
  * Creates a parser that match a regex at the cursor position
  */
 export function re(regexp: RegExp): Parser<string> {
-    return (ctx) => {
-        const offsetRegexp = new RegExp(regexp, regexp.flags + "g")
-        offsetRegexp.lastIndex = ctx.offset
-
-        const match = offsetRegexp.exec(ctx.source.content)
-        if (match && match.index === ctx.offset) {
-            return next(ctx, match[0].length)
+    return (input) => {
+        const match = input.matches(regexp)
+        if (match) {
+            return input.success({ value: match[0], length: match[0].length })
         }
-        return failure(ctx)
+        return input.failure({ expected: [] })
     }
 }
 

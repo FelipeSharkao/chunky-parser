@@ -1,14 +1,13 @@
-import type { Parser } from "@/types"
-import { failure, next } from "@/utils"
+import type { Parser } from "@/Parser"
 
 /**
  * Matches a sigle, no-specified character
  */
-export const any: Parser<string> = (ctx) => {
-    if (ctx.offset < ctx.source.content.length) {
-        return next(ctx, 1)
+export const any: Parser<string> = (input) => {
+    if (input.length > 0) {
+        return input.success({ value: input.take(1), length: 1 })
     }
-    return failure(ctx)
+    return input.failure({ expected: ["any character"] })
 }
 
 /**
@@ -16,11 +15,12 @@ export const any: Parser<string> = (ctx) => {
  */
 export function anyOf(characters: string): Parser<string> {
     const charArray = characters.split("")
-    return (ctx) => {
-        if (charArray.includes(ctx.source.content[ctx.offset])) {
-            return next(ctx, 1)
+    return (input) => {
+        const c = input.take(1)
+        if (charArray.includes(c)) {
+            return input.success({ value: c, length: 1 })
         }
-        return failure(ctx)
+        return input.failure({ expected: charArray.map((c) => JSON.stringify(c)) })
     }
 }
 
@@ -38,6 +38,12 @@ class CharRange {
         const c = char.charCodeAt(0)
         return c >= this.min && c <= this.max
     }
+
+    toString() {
+        const cMin = String.fromCharCode(this.min)
+        const cMax = String.fromCharCode(this.max)
+        return `any character between ${JSON.stringify(cMin)} and ${JSON.stringify(cMax)}`
+    }
 }
 
 /**
@@ -45,14 +51,14 @@ class CharRange {
  */
 export function anyIn(...ranges: string[]): Parser<string> {
     const nRanges = ranges.map((x) => new CharRange(x))
-    return (ctx) => {
+    return (input) => {
         for (const range of nRanges) {
-            const c = ctx.source.content[ctx.offset]
+            const c = input.take(1)
             if (c && range.match(c)) {
-                return next(ctx, 1)
+                return input.success({ value: c, length: 1 })
             }
         }
-        return failure(ctx)
+        return input.failure({ expected: nRanges.map((x) => x.toString()) })
     }
 }
 

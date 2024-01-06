@@ -13,7 +13,7 @@
         "preinstall": "git config diff.lockb.textconv bun; git config diff.lockb.binary true",
         "build": "bun build.ts",
         "test": "bun test",
-        "lint": "eslint src; tsc --noEmit"
+        "lint": "bunx --bun eslint src; bunx --bun tsc --noEmit"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^4.3.0",

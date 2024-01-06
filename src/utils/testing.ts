@@ -1,67 +1,59 @@
 import { strict as assert } from "node:assert"
 import { inspect } from "node:util"
-import type { UnknownRecord } from "type-fest"
 
-import type { LazyParser, ParseContext, ParseFailure, ParseSuccess } from "@/types"
-import { run } from "@/utils/parser"
+import { ParseInput, type ParseContext } from "@/ParseInput"
+import type { ParseFailure, ParseSuccess } from "@/ParseResult"
+import { run, type LazyParser } from "@/Parser"
 
-export function assertParser<T, TPayload extends UnknownRecord>(
-    parser: LazyParser<T, TPayload>,
-    ctx: string | ParseContext,
-    offset = 0
+type AssertParserArgs = {
+    offset?: number
+    context?: ParseContext
+}
+
+export function assertParser<T>(
+    parser: LazyParser<T>,
+    content: string,
+    args: AssertParserArgs = {}
 ) {
-    if (typeof ctx == "string") {
-        ctx = { source: { name: "", path: "", content: ctx }, offset }
-    } else {
-        ctx = { ...ctx, offset }
-    }
-    const result = run(parser, ctx)
+    const input = new ParseInput(
+        { name: "anonymous", path: "anonymous", content },
+        args.offset || 0,
+        args.context || {}
+    )
+    const result = run(parser, input)
 
     return {
-        succeeds(length: number, value: T): ParseSuccess<T, TPayload> {
+        succeeds(length: number, value: T): ParseSuccess<T> {
             assert.ok(
                 result.success,
                 `Expect parser to succeed with value ${inspect(value)}, it failed instead`
             )
 
-            const actualLength = result.next.offset - offset
+            const actualLength = result.loc[1] - result.loc[0]
             assert.equal(
                 actualLength,
                 length,
                 `Expected parser to match ${length} characters, it matched ${actualLength} instead.`
             )
 
-            assert.deepEqual(
-                result.value,
-                value,
-                `Expected parser to result in ${inspect(value)}, it results in ${inspect(
-                    result.value
-                )} instead.`
-            )
+            assert.deepEqual(result.value, value)
 
             return result
         },
         fails(after = 0, reason: string[] = []): ParseFailure {
             assert.ok(!result.success, "Expect parser to fail, it succeeded instead")
 
-            const expectedPos = offset + after
-            const actualPos = result.offset
-            assert.equal(
-                actualPos,
-                expectedPos,
-                `Expected parser to fail at character ${expectedPos}, it failed at ${actualPos} instead.`
-            )
-
-            const expectedReason = new Set(reason)
-            const actualReason = new Set(result.expected)
-            const format = (v: Set<string>) =>
-                v.size ? `[{${Array.from(v).join(", ")}}` : "undefined"
             assert.deepEqual(
-                actualReason,
-                expectedReason,
-                `Expected failed parser to be ${format(expectedReason)}, it was ${format(
-                    actualReason
-                )} instead.`
+                {
+                    success: false,
+                    offset: result.offset,
+                    expected: new Set(result.expected),
+                },
+                {
+                    success: false,
+                    offset: (args.offset || 0) + after,
+                    expected: new Set(reason),
+                }
             )
 
             return result

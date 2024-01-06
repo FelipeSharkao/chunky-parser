@@ -1,6 +1,6 @@
+import type { StackMap } from "@/ParseInput"
+import type { LazyParser, Parser } from "@/Parser"
 import { str } from "@/parsers"
-import type { LazyParser, Parser, StackMap } from "@/types"
-import { failure, success } from "@/utils"
 
 import { raw } from "./transform"
 
@@ -14,8 +14,8 @@ export class StackGroup {
      * Creates a parser that adds the matched text to the top of the text
      */
     push(parser: LazyParser<unknown>): Parser<string> {
-        return (ctx) => {
-            const result = raw(parser)(ctx)
+        return (input) => {
+            const result = raw(parser)(input)
             if (result.success) {
                 const stacks = { ...result.next.stacks }
                 stacks[this.name] = [...(stacks[this.name] || []), result.value]
@@ -27,107 +27,125 @@ export class StackGroup {
     }
 
     /**
-     * Creates a parser that matches the text at the top of the stack, without removing it. Fails if the stack is empty
-     */
-    peek(): Parser<string>
-    /**
-     * Creates a parser that matches the text of a item of the stack, without removing it. Fails if the stack is empty
+     * Creates a parser that matches the text in a slice of the stack, without removing it. Fails if
+     * the stack is empty
      *
-     * @arg at - The index of the item. If a negative number is passed, it will select the item from the bottom of the stack
+     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will
+     *              select the item from the bottom of the stack
+     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select
+     *            the item from the bottom of the stack
      */
-    peek(at: number): Parser<string>
-    /**
-     * Creates a parser that matches the text in a slice of the stack, without removing it. Fails if the stack is empty
-     *
-     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
-     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
-     */
-    peek(start: number, end: number): Parser<string>
     peek(start?: number, end?: number): Parser<string> {
-        return (ctx) => {
-            try {
-                return str(this.getItem(ctx.stacks, start, end))(ctx)
-            } catch (_) {
-                return failure(ctx)
+        return (input) => {
+            const item = this.getItem(input.context.stacks, start, end)
+
+            if (item === null) {
+                return input.failure({ expected: [] })
             }
+
+            const parser = str(item)
+            return parser(input)
         }
     }
 
     /**
-     * Creates a parser that matches the text at the top of the stack, removing it. Fails if the stack is empty
-     */
-    pop(): Parser<string>
-    /**
-     * Creates a parser that matches the text of a item of the stack, removing it. Fails if the stack is empty
+     * Creates a parser that matches the text in a slice of the stack, removing it. Fails if the
+     * stack is empty
      *
-     * @arg at - The index of the item. If a negative number is passed, it will select the item from the bottom of the stack
+     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will
+     *              select the item from the bottom of the stack
+     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select
+     *            the item from the bottom of the stack
      */
-    pop(at: number): Parser<string>
-    /**
-     * Creates a parser that matches the text in a slice of the stack, removing it. Fails if the stack is empty
-     *
-     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
-     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
-     */
-    pop(start: number, end: number): Parser<string>
     pop(start?: number, end?: number): Parser<string> {
-        return (ctx) => {
-            try {
-                const res = { ...str(this.getItem(ctx.stacks, start, end))(ctx) }
-                if (!res.success) return res
-                res.next = { ...res.next, stacks: this.removeItem(res.next.stacks, start, end) }
-                return res
-            } catch (_) {
-                return failure(ctx)
+        return (input) => {
+            const item = this.getItem(input.context.stacks, start, end)
+
+            if (item === null) {
+                return input.failure({ expected: [] })
+            }
+
+            const parser = str(item)
+            const result = parser(input)
+
+            if (!result.success) {
+                return result
+            }
+
+            return {
+                ...result,
+                next: { ...result.next, stacks: this.removeItem(result.next.stacks, start, end) },
             }
         }
     }
 
-    /**
-     * Creates a parser that removes the item at the top of the stack
-     */
-    drop(): Parser<null>
-    /**
-     * Creates a parser that removes a item of the stack
-     *
-     * @arg at - The index of the item to be removed. If a negative number is passed, it will select the item from the bottom of the stack
-     */
-    drop(at: number): Parser<null>
     /**
      * Creates a parser that removes a slice of the stack
      *
-     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
-     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select the item from the bottom of the stack
+     * @arg start - The start of the slice, inclusive. If a negative number is passed, it will
+     *              select the item from the bottom of the stack
+     * @arg end - The end of the slice, inclusive. If a negative number is passed, it will select
+     *            the item from the bottom of the stack
      */
-    drop(start: number, end: number): Parser<null>
     drop(start?: number, end?: number): Parser<null> {
-        return (ctx) => {
-            const next = { ...ctx, stacks: this.removeItem(ctx.stacks, start, end) }
-            return success(null, [ctx.offset, ctx.offset], next)
+        return (input) => {
+            const next = { ...input, stacks: this.removeItem(input.context.stacks, start, end) }
+            return input.success({ value: null, next })
         }
     }
 
-    private fixRange(map: StackMap = {}, start = 0, end = start) {
+    /**
+     * Transforms the `start` and `end` arguments of a parser into indexes of the stack array.
+     * Returns a tuple where the first element is the index of the start of the array slice, and
+     * the second element is the index of the end of the array slice, exclusive. If the indexes are
+     * out of bounds, returns null
+     *
+     * @arg map - The stack map to use. Defaults to an empty object
+     * @arg start - The start of the range, inclusive. If positive, it will be counted from the end
+     *              of the array. If negative, it will be counted from the start of the array
+     * @arg end - The end of the range, inclusive. If positive, it will be counted from the end of
+     *            the array. If negative, it will be counted from the start of the array
+     */
+    private rangeToIndexes(map: StackMap = {}, start = 0, end = start) {
         const array = map[this.name] || []
-        if (start < 0) start = array.length - start
-        if (end < 0) end = array.length - end
-        if (start > end) end = start
+
+        if (start < 0) {
+            start = array.length - start
+        }
+
+        if (end < 0) {
+            end = array.length - end
+        }
+
+        if (start > end || start < 0 || end > array.length) {
+            return null
+        }
+
         return [array.length - end - 1, array.length - start] as const
     }
 
     private getItem(map: StackMap = {}, start?: number, end?: number) {
-        const [i, j] = this.fixRange(map, start, end)
+        const idx = this.rangeToIndexes(map, start, end)
         const array = map[this.name]
-        if (!array?.length) throw new Error()
-        const text = array.slice(i, j).join("")
+
+        if (idx === null || !array?.length) {
+            return null
+        }
+
+        const text = array.slice(...idx).join("")
         return text
     }
 
     private removeItem(map: StackMap = {}, start?: number, end?: number) {
-        const [i, j] = this.fixRange(map, start, end)
-        const res = { ...map }
-        const array = (res[this.name] = [...(res[this.name] || [])])
-        if (array.length) array.splice(i, j - i)
-        return res
+        const idx = this.rangeToIndexes(map, start, end)
+
+        const result = { ...map }
+        const array = (result[this.name] = [...(result[this.name] || [])])
+
+        if (array.length && idx) {
+            array.splice(idx[0], idx[1] - idx[0])
+        }
+
+        return result
     }
 }

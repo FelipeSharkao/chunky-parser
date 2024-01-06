@@ -1,12 +1,16 @@
-import type { Parser, Source } from "@/types"
+import { ParseInput, type ParseContext } from "@/ParseInput"
+import type { Parser } from "@/Parser"
+import type { Source } from "@/Source"
 
 export * from "@/combinators"
+export * from "@/ParseInput"
+export * from "@/ParseResult"
+export * from "@/Parser"
 export * from "@/parsers"
-export * from "@/types"
-export * from "@/utils"
+export * from "@/Source"
 
-export function parse<T>(parser: Parser<T>, source: Source): T {
-    const result = parser({ source, offset: 0 })
+export function parse<T>(parser: Parser<T>, source: Source, context: ParseContext): T {
+    const result = parser(new ParseInput(source, 0, context))
     if (result.success) {
         return result.value
     }
