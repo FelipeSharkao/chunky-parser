@@ -12,6 +12,8 @@ export type ParserType<T extends LazyParser<unknown>> = T extends LazyParser<inf
  */
 export function run<T>(parser: LazyParser<T>, input: ParseInput): ParseResult<T> {
     const result = parser(input)
-    if (typeof result == "function") return run(parser, input)
+    if (typeof result == "function") {
+        return run(result, input)
+    }
     return result
 }
