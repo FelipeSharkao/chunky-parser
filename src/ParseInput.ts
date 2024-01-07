@@ -1,9 +1,11 @@
 import type { ParseFailure, ParseSuccess } from "@/ParseResult"
 import type { Source } from "@/Source"
 
+/** @internal */
 export type StackMap = Record<string, string[] | undefined>
 
 export interface ParseContext {
+    /** @internal */
     stacks?: StackMap
 }
 
