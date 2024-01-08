@@ -1,6 +1,7 @@
-# Chunky.ts
+# Chunky Parser
 
-Lightweight parser combinator library for TypeScript.
+Lightweight LL(0) parser combinator library for TypeScript with support for direct and indirect left
+and right recursion.
 
 ## Example
 

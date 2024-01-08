@@ -1,4 +1,4 @@
-import { ParseInput } from "@/ParseInput"
+import type { ParseResult } from "@/ParseResult"
 import { run, type LazyParser, type Parser, type ParserType } from "@/Parser"
 
 export type OptionalParser<T> = Parser<T | null>
@@ -46,44 +46,80 @@ export function not(parser: LazyParser<unknown>): Parser<null> {
     }
 }
 
-type PrecedenceItem = {
-    index: number
-    offset: number
-}
-
 /*
- * Creates a parser that will match if any of its parsers matches. Parsers are tested in order of
- * application, matching the first to succeed
+ * Creates a parser that will match if any of its parsers matches. Parsers are tested in
+ * order of application, matching the first to succeed
  */
 export function oneOf<T extends LazyParser<unknown>[]>(...parsers: T): OneOfParser<T[number]> {
-    // Handle recursive patters by keeping track of the current offset and the index of the parser.
-    // Every time a parser fails, the index is incremented.
-    // If the parser is executed again due to a recursive parser, it will skip to the index and
-    // continue from there. But if the offset is the same, that indicates that the parser has left
-    // recursion and is now in an infinite loop, so it starts at the next index instead.
-    const stack: PrecedenceItem[] = []
+    // Handle recursive patters by keeping track of the last used index at that offset.
+    // If the parser is executed again at the same tree due to a recursive parser, it will skip to
+    // the next index and continue from there. This avoids infinity loops due to left recursion.
+
+    const recStack: { offset: number; idx: number; count: number }[] = []
+
+    // Key: "offset:index"
+    const cache = new Map<string, ParseResult<ParserType<T[number]>>>()
 
     return (input) => {
-        const prev = stack.length ? stack[stack.length - 1] : null
-
-        const item = { index: prev ? prev.index : 0, offset: input.offset }
-        stack.push(item)
-
-        if (prev && prev.offset === input.offset) {
-            item.index = prev.index + 1
-        }
-
         const expected = [] as string[]
-        for (; item.index < parsers.length; item.index++) {
-            const result = run(parsers[item.index] as OneOfParser<T[number]>, input)
-            if (result.success) {
-                stack.pop()
-                return result
-            } else {
-                expected.push(...result.expected)
-            }
+
+        const lastRec = recStack[recStack.length - 1]
+        const rec = lastRec
+            ? { offset: input.offset, idx: lastRec.idx, count: lastRec.count + 1 }
+            : { offset: input.offset, idx: 0, count: 0 }
+        recStack.push(rec)
+
+        // FIXME: using the remaining length will most likely create excessive stack frames. It
+        // would be better if the text was already tokenized first, greatly reducing the length of
+        // the input.
+        if (
+            lastRec &&
+            (lastRec.offset !== input.offset || rec.count > Math.min(input.length + 1, 20))
+        ) {
+            rec.idx += 1
+            rec.count = 0
         }
-        stack.pop()
-        return input.failure({ expected })
+
+        try {
+            for (; rec.idx < parsers.length; rec.idx++) {
+                const cacheKey = `${input.offset}:${rec.idx}`
+
+                // Only run the parser if it hasn't been run at this offset before
+                let cached = cache.get(cacheKey)
+                let result = cached
+
+                if (!result) {
+                    result = run(parsers[rec.idx] as OneOfParser<T[number]>, input)
+                }
+
+                // If the parser is left recursive, a lot of repeated call stacks will be created.
+                // In one of them, the parser might succeed with the complete tree, but as the
+                // previous ones are still running, they will fail. We want to cache every success
+                // so if the parser fails due to this nesting, we can recover the successful result.
+                // We will also cache the first failure, but the next ones are probably due to this
+                // nesting shenanigans, so we will ignore them.
+                cached = cache.get(cacheKey)
+                if (result !== cached && result.success) {
+                    cache.set(cacheKey, result)
+                } else if (cached) {
+                    result = cached
+                }
+
+                if (result.success) {
+                    return result
+                } else {
+                    // If the parser is left recursive, we want to recover the successful result
+                    // from a nested attempt
+                    if (cached?.success) {
+                        return cached
+                    }
+
+                    expected.push(...result.expected)
+                }
+            }
+            return input.failure({ expected })
+        } finally {
+            recStack.pop()
+        }
     }
 }
