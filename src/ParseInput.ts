@@ -1,15 +1,9 @@
 import type { ParseFailure, ParseSuccess } from "@/ParseResult"
-import type { StackGroup } from "@/combinators/stack"
 import type { Token, TokenType } from "@/tokens"
-
-/** @internal */
-export type StackMap = Map<StackGroup, string[]>
 
 export interface ParseContext {
     /** @internal */
     test?: string
-    /** @internal */
-    stacks?: StackMap
 }
 
 /**
