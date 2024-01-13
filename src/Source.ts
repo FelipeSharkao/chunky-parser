@@ -1,7 +1,7 @@
-export interface Source {
+export type Source = {
     name: string
-    path: string
-    content: string
+    readonly path: string
+    readonly content: string
 }
 
 export type LocationRange = readonly [start: number, end: number]

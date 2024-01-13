@@ -1,5 +1,5 @@
 import { ParseInput, type ParseContext } from "@/ParseInput"
-import type { Parser } from "@/Parser"
+import { run, type Parser } from "@/Parser"
 import type { Source } from "@/Source"
 
 export * from "@/combinators"
@@ -10,7 +10,7 @@ export * from "@/parsers"
 export * from "@/Source"
 
 export function parse<T>(parser: Parser<T>, source: Source, context: ParseContext): T {
-    const result = parser(new ParseInput(source, 0, context))
+    const result = run(parser, new ParseInput(source, 0, context))
     if (result.success) {
         return result.value
     }

@@ -1,10 +1,13 @@
 import type { ParseFailure, ParseSuccess } from "@/ParseResult"
 import type { Source } from "@/Source"
+import type { StackGroup } from "@/combinators/stack"
 
 /** @internal */
-export type StackMap = Record<string, string[] | undefined>
+export type StackMap = Map<StackGroup, string[]>
 
 export interface ParseContext {
+    /** @internal */
+    test?: string
     /** @internal */
     stacks?: StackMap
 }
@@ -16,9 +19,13 @@ export interface ParseContext {
 export class ParseInput {
     constructor(
         readonly source: Source,
-        readonly offset: number,
-        readonly context: ParseContext
+        public offset: number,
+        public context: ParseContext
     ) {}
+
+    clone(): ParseInput {
+        return new ParseInput(this.source, this.offset, structuredClone(this.context))
+    }
 
     /**
      * Returns a string containing the next `n` characters from the source text
@@ -60,8 +67,7 @@ export class ParseInput {
         return {
             success: true,
             value: opts.value,
-            loc: [opts.start || this.offset, opts.end || this.offset + (opts.length || 0)],
-            next: opts.next || this.context,
+            loc: [opts.start ?? this.offset, opts.end ?? this.offset + (opts.length || 0)],
         }
     }
 
@@ -72,7 +78,7 @@ export class ParseInput {
         return {
             success: false,
             source: this.source,
-            offset: opts.offset || this.offset + (opts.move || 0),
+            offset: opts.offset ?? this.offset + (opts.move || 0),
             expected: opts.expected,
         }
     }
@@ -105,10 +111,6 @@ type SuccessOptions<T> = {
      *  The length of the parsed value. Will be ignored if `end` is specified
      */
     length?: number
-    /**
-     * The context to use for the next parser. Defaults to the current context of the input
-     */
-    next?: ParseContext
 }
 
 /**

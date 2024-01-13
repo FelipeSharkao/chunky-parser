@@ -1,16 +1,16 @@
 import type { ParseResult } from "@/ParseResult"
-import { run, type LazyParser, type Parser, type ParserType } from "@/Parser"
+import { run, type Parser, type ParserType, tryRun } from "@/Parser"
 
 export type OptionalParser<T> = Parser<T | null>
 
-export type OneOfParser<T extends LazyParser<unknown>> = Parser<ParserType<T>>
+export type OneOfParser<T extends Parser<unknown>> = Parser<ParserType<T>>
 
 /*
  * Creates a parser that will match `null` instead of failing
  */
-export function optional<T>(parser: LazyParser<T>): OptionalParser<T> {
+export function optional<T>(parser: Parser<T>): OptionalParser<T> {
     return (input) => {
-        const result = run(parser, input)
+        const result = tryRun(parser, input)
         if (!result.success) {
             return input.success({ value: null })
         }
@@ -21,11 +21,13 @@ export function optional<T>(parser: LazyParser<T>): OptionalParser<T> {
 /*
  * Creates a parser that will never consume any text
  */
-export function predicate<T>(parser: LazyParser<T>): Parser<T> {
+export function predicate<T>(parser: Parser<T>): Parser<T> {
     return (input) => {
-        const result = run(parser, input)
+        const oldOffset = input.offset
+        const result = tryRun(parser, input)
         if (result.success) {
-            return input.success({ value: result.value, next: result.next })
+            input.offset = oldOffset
+            return input.success({ value: result.value })
         }
         return result
     }
@@ -35,9 +37,9 @@ export function predicate<T>(parser: LazyParser<T>): Parser<T> {
  * Creates a parser that will succeed if the original parser fails, and will fail if the original
  * parser succeeds.
  */
-export function not(parser: LazyParser<unknown>): Parser<null> {
+export function not(parser: Parser<unknown>): Parser<null> {
     return (input) => {
-        const result = run(parser, input)
+        const result = run(parser, input.clone())
         if (result.success) {
             return input.failure({ expected: [] })
         } else {
@@ -50,7 +52,7 @@ export function not(parser: LazyParser<unknown>): Parser<null> {
  * Creates a parser that will match if any of its parsers matches. Parsers are tested in
  * order of application, matching the first to succeed
  */
-export function oneOf<T extends LazyParser<unknown>[]>(...parsers: T): OneOfParser<T[number]> {
+export function oneOf<T extends Parser<unknown>[]>(...parsers: T): OneOfParser<T[number]> {
     // Handle recursive patters by keeping track of the last used index at that offset.
     // If the parser is executed again at the same tree due to a recursive parser, it will skip to
     // the next index and continue from there. This avoids infinity loops due to left recursion.
@@ -89,7 +91,7 @@ export function oneOf<T extends LazyParser<unknown>[]>(...parsers: T): OneOfPars
                 let result = cached
 
                 if (!result) {
-                    result = run(parsers[rec.idx] as OneOfParser<T[number]>, input)
+                    result = tryRun(parsers[rec.idx] as OneOfParser<T[number]>, input)
                 }
 
                 // If the parser is left recursive, a lot of repeated call stacks will be created.

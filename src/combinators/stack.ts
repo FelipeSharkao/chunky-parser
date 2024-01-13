@@ -1,6 +1,5 @@
 import type { StackMap } from "@/ParseInput"
-import type { LazyParser, Parser } from "@/Parser"
-import { str } from "@/parsers"
+import { run, type Parser } from "@/Parser"
 
 import { raw } from "./transform"
 
@@ -8,21 +7,31 @@ import { raw } from "./transform"
  * Group of combinators that stores the parsed text, allowing for complex, context-aware syntaxes
  */
 export class StackGroup {
-    constructor(readonly name: string) {}
+    constructor() {}
 
     /**
      * Creates a parser that adds the matched text to the top of the text
      */
-    push(parser: LazyParser<unknown>): Parser<string> {
+    push(parser: Parser<unknown>): Parser<string> {
+        const rawParser = raw(parser)
+
         return (input) => {
-            const result = raw(parser)(input)
+            const result = run(rawParser, input)
             if (result.success) {
-                const stacks = { ...result.next.stacks }
-                stacks[this.name] = [...(stacks[this.name] || []), result.value]
-                return { ...result, next: { ...result.next, stacks } }
-            } else {
-                return result
+                if (!input.context.stacks) {
+                    input.context.stacks = new Map()
+                }
+
+                let stack = input.context.stacks.get(this)
+                if (!stack) {
+                    stack = []
+                    input.context.stacks.set(this, stack)
+                }
+
+                stack.push(result.value)
             }
+
+            return result
         }
     }
 
@@ -38,13 +47,14 @@ export class StackGroup {
     peek(start?: number, end?: number): Parser<string> {
         return (input) => {
             const item = this.getItem(input.context.stacks, start, end)
-
             if (item === null) {
                 return input.failure({ expected: [] })
             }
 
-            const parser = str(item)
-            return parser(input)
+            if (input.startsWith(item)) {
+                return input.success({ value: item, length: item.length })
+            }
+            return input.failure({ expected: [JSON.stringify(item)] })
         }
     }
 
@@ -60,22 +70,15 @@ export class StackGroup {
     pop(start?: number, end?: number): Parser<string> {
         return (input) => {
             const item = this.getItem(input.context.stacks, start, end)
-
             if (item === null) {
                 return input.failure({ expected: [] })
             }
 
-            const parser = str(item)
-            const result = parser(input)
-
-            if (!result.success) {
-                return result
+            if (input.startsWith(item)) {
+                this.removeItem(input.context.stacks, start, end)
+                return input.success({ value: item, length: item.length })
             }
-
-            return {
-                ...result,
-                next: { ...result.next, stacks: this.removeItem(result.next.stacks, start, end) },
-            }
+            return input.failure({ expected: [JSON.stringify(item)] })
         }
     }
 
@@ -89,8 +92,8 @@ export class StackGroup {
      */
     drop(start?: number, end?: number): Parser<null> {
         return (input) => {
-            const next = { ...input, stacks: this.removeItem(input.context.stacks, start, end) }
-            return input.success({ value: null, next })
+            this.removeItem(input.context.stacks, start, end)
+            return input.success({ value: null })
         }
     }
 
@@ -100,52 +103,55 @@ export class StackGroup {
      * the second element is the index of the end of the array slice, exclusive. If the indexes are
      * out of bounds, returns null
      *
-     * @arg map - The stack map to use. Defaults to an empty object
+     * @arg map - The stack map to use
      * @arg start - The start of the range, inclusive. If positive, it will be counted from the end
      *              of the array. If negative, it will be counted from the start of the array
      * @arg end - The end of the range, inclusive. If positive, it will be counted from the end of
      *            the array. If negative, it will be counted from the start of the array
      */
-    private rangeToIndexes(map: StackMap = {}, start = 0, end = start) {
-        const array = map[this.name] || []
+    private rangeToIndexes(map: StackMap, start = 0, end = start) {
+        const stack = map.get(this) || []
 
         if (start < 0) {
-            start = array.length - start
+            start = stack.length - start
         }
 
         if (end < 0) {
-            end = array.length - end
+            end = stack.length - end
         }
 
-        if (start > end || start < 0 || end > array.length) {
+        if (start > end || start < 0 || end > stack.length) {
             return null
         }
 
-        return [array.length - end - 1, array.length - start] as const
+        return [stack.length - end - 1, stack.length - start] as const
     }
 
-    private getItem(map: StackMap = {}, start?: number, end?: number) {
-        const idx = this.rangeToIndexes(map, start, end)
-        const array = map[this.name]
-
-        if (idx === null || !array?.length) {
+    private getItem(map: StackMap | undefined, start?: number, end?: number) {
+        const stack = map?.get(this)
+        if (!map || !stack?.length) {
             return null
         }
 
-        const text = array.slice(...idx).join("")
+        const idx = this.rangeToIndexes(map, start, end)
+        if (idx === null) {
+            return null
+        }
+
+        const text = stack.slice(idx[0], idx[1]).join("")
         return text
     }
 
-    private removeItem(map: StackMap = {}, start?: number, end?: number) {
-        const idx = this.rangeToIndexes(map, start, end)
-
-        const result = { ...map }
-        const array = (result[this.name] = [...(result[this.name] || [])])
-
-        if (array.length && idx) {
-            array.splice(idx[0], idx[1] - idx[0])
+    private removeItem(map: StackMap | undefined, start?: number, end?: number) {
+        const stack = map?.get(this)
+        if (!map || !stack?.length) {
+            return
         }
 
-        return result
+        const idx = this.rangeToIndexes(map, start, end)
+
+        if (stack.length && idx) {
+            stack.splice(idx[0], idx[1] - idx[0])
+        }
     }
 }

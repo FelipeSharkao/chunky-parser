@@ -2,19 +2,14 @@ import { strict as assert } from "node:assert"
 import { inspect } from "node:util"
 
 import { ParseInput, type ParseContext } from "@/ParseInput"
-import type { ParseFailure, ParseSuccess } from "@/ParseResult"
-import { run, type LazyParser } from "@/Parser"
+import { run, type Parser } from "@/Parser"
 
 type AssertParserArgs = {
     offset?: number
     context?: ParseContext
 }
 
-export function assertParser<T>(
-    parser: LazyParser<T>,
-    content: string,
-    args: AssertParserArgs = {}
-) {
+export function assertParser<T>(parser: Parser<T>, content: string, args: AssertParserArgs = {}) {
     const input = new ParseInput(
         { name: "anonymous", path: "anonymous", content },
         args.offset || 0,
@@ -23,7 +18,7 @@ export function assertParser<T>(
     const result = run(parser, input)
 
     return {
-        succeeds(length: number, value: T): ParseSuccess<T> {
+        succeeds(length: number, value: T): ParseContext {
             assert.ok(
                 result.success,
                 `Expect parser to succeed with value ${inspect(value)}, it failed instead`
@@ -38,9 +33,9 @@ export function assertParser<T>(
 
             assert.deepEqual(result.value, value)
 
-            return result
+            return input.context
         },
-        fails(after = 0, reason: string[] = []): ParseFailure {
+        fails(after = 0, reason: string[] = []): ParseContext {
             assert.ok(!result.success, "Expect parser to fail, it succeeded instead")
 
             assert.deepEqual(
@@ -56,7 +51,7 @@ export function assertParser<T>(
                 }
             )
 
-            return result
+            return input.context
         },
     }
 }
