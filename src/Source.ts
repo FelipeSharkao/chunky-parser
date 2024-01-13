@@ -1,5 +1,4 @@
 export type Source = {
-    name: string
     readonly path: string
     readonly content: string
 }

@@ -11,7 +11,7 @@ type AssertParserArgs = {
 
 export function assertParser<T>(parser: Parser<T>, content: string, args: AssertParserArgs = {}) {
     const input = new ParseInput(
-        { name: "anonymous", path: "anonymous", content },
+        { path: "anonymous", content },
         args.offset || 0,
         args.context || {}
     )
