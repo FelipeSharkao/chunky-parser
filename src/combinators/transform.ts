@@ -25,7 +25,7 @@ export function raw(parser: Parser<unknown>): Parser<string> {
     return (input) => {
         const result = run(parser, input)
         if (result.success) {
-            result.value = input.source.content.slice(result.loc[0], result.loc[1])
+            result.value = input.content.slice(result.loc[0], result.loc[1])
         }
         return result as ParseResult<string>
     }

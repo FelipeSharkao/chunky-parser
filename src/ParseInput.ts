@@ -1,6 +1,6 @@
 import type { ParseFailure, ParseSuccess } from "@/ParseResult"
-import type { Source } from "@/Source"
 import type { StackGroup } from "@/combinators/stack"
+import type { Token, TokenType } from "@/tokens"
 
 /** @internal */
 export type StackMap = Map<StackGroup, string[]>
@@ -17,47 +17,55 @@ export interface ParseContext {
  * copying it, and contains the context of the previous parsers
  */
 export class ParseInput {
+    private tokens: Token<string>[] = []
+    private srcCursor = 0
+    private tkCursor = 0
+
     constructor(
-        readonly source: Source,
-        public offset: number,
+        readonly path: string,
+        readonly content: string,
         public context: ParseContext
     ) {}
 
     clone(): ParseInput {
-        return new ParseInput(this.source, this.offset, structuredClone(this.context))
+        const newInput = new ParseInput(this.path, this.content, structuredClone(this.context))
+        newInput.tokens = this.tokens
+        newInput.srcCursor = this.srcCursor
+        newInput.tkCursor = this.tkCursor
+        return newInput
     }
 
     /**
-     * Returns a string containing the next `n` characters from the source text
+     * Returns a token of the specified type from the current input if the current input starts with
+     * this token type, or null otherwise
      */
-    take(n: number): string {
-        if (n <= 0) {
-            return ""
+    token<K extends string>(type: TokenType<K>): Token<K> | null {
+        if (this.tkCursor < this.tokens.length) {
+            const tk = this.tokens[this.tkCursor]
+
+            if (tk.is(type) && tk.loc[0] === this.srcCursor) {
+                return tk
+            }
+
+            return null
         }
 
-        if (n === 1) {
-            return this.source.content[this.offset]
+        const match = this.match(type.pattern)
+
+        if (match != null) {
+            const tk = type.token(match, [this.srcCursor, this.srcCursor + match.length])
+            this.tokens.push(tk)
+            return tk
         }
 
-        return this.source.content.slice(this.offset, this.offset + n)
+        return null
     }
 
     /**
      * Returns true if the source text at the offset starts with `search`
      */
     startsWith(search: string): boolean {
-        return this.source.content.startsWith(search, this.offset)
-    }
-
-    /**
-     * Executes a regex on the source text at the offset. The regex will only search for a match at
-     * the offset, as if it had the `y` flag, and the `g` flag will be ignored. The original regex
-     * object will not be modified, and it's `lastIndex` will be ignored
-     */
-    matches(regex: RegExp): RegExpExecArray | null {
-        const _regex = new RegExp(regex.source, regex.flags.replace("g", "") + "y")
-        _regex.lastIndex = this.offset
-        return _regex.exec(this.source.content)
+        return this.content.startsWith(search, this.offset)
     }
 
     /**
@@ -77,7 +85,6 @@ export class ParseInput {
     failure(opts: FailureOptions): ParseFailure {
         return {
             success: false,
-            source: this.source,
             offset: opts.offset ?? this.offset + (opts.move || 0),
             expected: opts.expected,
         }
@@ -87,7 +94,70 @@ export class ParseInput {
      * Returns the length of the source text after the offset
      */
     get length(): number {
-        return this.source.content.length - this.offset
+        return this.content.length - this.offset
+    }
+
+    /**
+     * Returns the current offset of the input
+     */
+    get offset(): number {
+        return this.srcCursor
+    }
+
+    /**
+     * Sets the current offset of the input
+     *
+     * @throws If the offset is out of bounds of the source text or if it points to a token that
+     *         hasn't been parsed yet
+     */
+    set offset(value: number) {
+        if (value < 0 || value > this.content.length) {
+            throw new Error(`Offset ${value} is out of bounds`)
+        }
+
+        if (value > (this.tokens[this.tokens.length - 1]?.loc[1] ?? 0)) {
+            throw new Error(`Offset ${value} points to a token that hasn't been parsed yet`)
+        }
+
+        if (this.srcCursor === value) {
+            return
+        }
+
+        if (value < this.srcCursor) {
+            while (this.tkCursor > 0 && this.tokens[this.tkCursor - 1].loc[0] > value) {
+                this.tkCursor -= 1
+            }
+        } else {
+            while (
+                this.tkCursor < this.tokens.length &&
+                this.tokens[this.tkCursor].loc[1] <= value
+            ) {
+                this.tkCursor += 1
+            }
+        }
+
+        this.srcCursor = value
+    }
+
+    /**
+     * Match the source text at the offset with the specified pattern
+     */
+    private match(pat: string | RegExp): string | null {
+        if (typeof pat == "string") {
+            if (this.content.startsWith(pat, this.offset)) {
+                return pat
+            }
+        } else {
+            const re = new RegExp(pat.source, pat.flags)
+            re.lastIndex = this.offset
+
+            const match = re.exec(this.content)
+            if (match?.length) {
+                return match[0]
+            }
+        }
+
+        return null
     }
 }
 

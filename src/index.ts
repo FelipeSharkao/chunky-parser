@@ -1,24 +1,25 @@
-import { ParseInput, type ParseContext } from "@/ParseInput"
+import { ParseInput } from "@/ParseInput"
 import { run, type Parser } from "@/Parser"
-import type { Source } from "@/Source"
 
 export * from "@/combinators"
 export * from "@/ParseInput"
 export * from "@/ParseResult"
 export * from "@/Parser"
-export * from "@/parsers"
-export * from "@/Source"
+export { tokens } from "@/tokens"
 
-export function parse<T>(parser: Parser<T>, source: Source, context: ParseContext): T {
-    const result = run(parser, new ParseInput(source, 0, context))
+export function parse<T>(parser: Parser<T>, input: ParseInput) {
+    const result = run(parser, input)
     if (result.success) {
         return result.value
     }
-    throw new Error(
-        "Parsing error\n\n" +
-            `At ${result.source.path}:${result.offset}\n` +
-            (result.expected.length === 0
-                ? "    Unexpected input."
-                : `    Unexpected input. Expected one of: ${result.expected.join(", ")}`)
-    )
+
+    let message = `Parsing error\nAt ${input.path}:${result.offset}\n    Unexpected input.`
+
+    if (result.expected.length === 1) {
+        message += `    Unexpected input. Expected ${result.expected[0]}`
+    } else if (result.expected.length > 1) {
+        message += `    Unexpected input. Expected one of: ${result.expected.join(", ")}`
+    }
+
+    throw new Error(message)
 }

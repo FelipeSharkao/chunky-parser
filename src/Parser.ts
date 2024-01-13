@@ -1,11 +1,15 @@
 import type { ParseInput } from "@/ParseInput"
 import type { ParseResult } from "@/ParseResult"
 
-export type Parser<T> = ParserFunction<T> | LazyParser<T>
+export type Parser<T> = ParserFunction<T> | LazyParser<T> | ParserClass<T>
 
 type ParserFunction<T> = (input: ParseInput) => ParseResult<T>
 
 type LazyParser<T> = () => Parser<T>
+
+export interface ParserClass<T> {
+    parse(input: ParseInput): ParseResult<T>
+}
 
 export type ParserType<T extends Parser<unknown>> = T extends Parser<infer R> ? R : never
 
@@ -15,10 +19,18 @@ export type ParserType<T extends Parser<unknown>> = T extends Parser<infer R> ? 
  * If you want to be able to recover the original input in case of failure, you should use `tryRun`.
  */
 export function run<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
-    const result = parser(input)
-    if (typeof result == "function") {
-        return result(input) as ParseResult<T>
+    let result: ParseResult<T>
+    if (typeof parser == "function") {
+        let lazyResult = parser(input)
+        if (typeof lazyResult == "function") {
+            lazyResult = lazyResult(input)
+        }
+        result = lazyResult as ParseResult<T>
+    } else {
+        result = parser.parse(input)
     }
+
+    input.offset = result.success ? result.loc[1] : result.offset
     return result
 }
 
@@ -31,13 +43,19 @@ export function run<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
 export function tryRun<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
     const newInput = input.clone()
 
-    let result = parser(newInput)
-    if (typeof result == "function") {
-        result = result(newInput) as ParseResult<T>
+    let result: ParseResult<T>
+    if (typeof parser == "function") {
+        let lazyResult = parser(newInput)
+        if (typeof lazyResult == "function") {
+            lazyResult = lazyResult(newInput)
+        }
+        result = lazyResult as ParseResult<T>
+    } else {
+        result = parser.parse(newInput)
     }
 
     if (result.success) {
-        input.offset = newInput.offset
+        input.offset = result.loc[1]
         input.context = newInput.context
     }
 

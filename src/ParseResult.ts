@@ -1,5 +1,3 @@
-import type { LocationRange, Source } from "@/Source"
-
 export type ParseResult<T> = ParseSuccess<T> | ParseFailure
 
 export type ParseSuccess<T> = {
@@ -10,7 +8,8 @@ export type ParseSuccess<T> = {
 
 export type ParseFailure = {
     readonly success: false
-    readonly source: Source
     offset: number
     expected: string[]
 }
+
+export type LocationRange = readonly [start: number, end: number]

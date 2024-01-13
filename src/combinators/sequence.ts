@@ -27,8 +27,6 @@ export function seq<T extends readonly Parser<unknown>[]>(...parsers: T): Merged
                     start = result.loc[0]
                 }
                 end = result.loc[1]
-
-                input.offset = end
             } else {
                 return result
             }
@@ -44,7 +42,7 @@ export function seq<T extends readonly Parser<unknown>[]>(...parsers: T): Merged
 /*
  * Creates a parser that will try to match the same parser repeated times
  */
-export function many<T>(parser: Parser<T>, min: number, max: number): RepeatedParser<T> {
+export function many<T>(parser: Parser<T>, min: number, max = min): RepeatedParser<T> {
     return (input) => {
         const value: T[] = []
 
@@ -60,8 +58,6 @@ export function many<T>(parser: Parser<T>, min: number, max: number): RepeatedPa
                     start = result.loc[0]
                 }
                 end = result.loc[1]
-
-                input.offset = end
             } else if (value.length < min) {
                 return result
             } else {

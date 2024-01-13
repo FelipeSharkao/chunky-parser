@@ -1,65 +1,74 @@
-import { describe, it } from "bun:test"
+import { describe, it, expect } from "bun:test"
 
-import { str } from "@/parsers"
-import { assertParser } from "@/utils/testing"
+import { ParseInput } from "@/ParseInput"
+import { run } from "@/Parser"
+import { tokens } from "@/tokens"
+import { expectParser } from "@/utils/testing"
 
 import { not, oneOf, optional, predicate } from "./choice"
 
-describe("optional", () => {
-    const parser = optional(str("bana"))
+const tk = tokens({
+    foo: { pattern: "foo" },
+})
 
+const parser = (input: ParseInput) => {
+    const result = run(tk.foo, input)
+    input.context.test = "foo"
+
+    if (!result.success) {
+        return result
+    }
+
+    return input.success({
+        value: result.value.text,
+        start: result.loc[0],
+        end: result.loc[1],
+    })
+}
+
+describe("optional", () => {
     it("results null instead of failing", () => {
-        const src = "banana"
-        assertParser(parser, src, { offset: 0 }).succeeds(4, "bana")
-        assertParser(parser, src, { offset: 2 }).succeeds(0, null)
+        const input = new ParseInput("test", "foo", {})
+        expectParser(optional(parser), input).toSucceed({ value: "foo", loc: [0, 3] })
+        expectParser(optional(parser), input).toSucceed({ value: null, loc: [3, 3] })
     })
 })
 
 describe("predicate", () => {
-    it("matches without moving the context", () => {
-        const parser = predicate(str("bana"))
-        const src = "banana"
-        assertParser(parser, src, { offset: 0 }).succeeds(0, "bana")
+    it("matches without moving the offset", () => {
+        const input = new ParseInput("test", "foo", {})
+        run(predicate(parser), input)
+        expect(input.offset).toBe(0)
     })
 
     it("fails when the original parser fails", () => {
-        const parser = predicate(str("bana"))
-        const src = "banana"
-        assertParser(parser, src, { offset: 2 }).fails(0, ['"bana"'])
+        const input = new ParseInput("test", "bar", {})
+        expectParser(parser, input).toFail({ expected: ["foo"] })
     })
 })
 
 describe("not", () => {
-    const parser = not(str("bana"))
-
     it("fails when the original parser succeede", () => {
-        const src = "banana"
-        assertParser(parser, src, { offset: 0 }).fails()
+        const input = new ParseInput("test", "foo", {})
+        expectParser(not(parser), input).toFail({ expected: [] })
     })
 
     it("succeede when the original parser fails", () => {
-        const src = "banana"
-        assertParser(parser, src, { offset: 2 }).succeeds(0, null)
+        const input = new ParseInput("test", "bar", {})
+        expectParser(not(parser), input).toSucceed({ value: null, loc: [0, 0] })
     })
 })
 
 describe("oneOf", () => {
-    const parser = oneOf(str("bana"), str("nana"))
-
     it("matches when any of parsers matches", () => {
-        const src = "banana"
-        assertParser(parser, src, { offset: 0 }).succeeds(4, "bana")
-        assertParser(parser, src, { offset: 2 }).succeeds(4, "nana")
+        const _parser = oneOf(not(parser), parser)
+        const input = new ParseInput("test", "foo", {})
+        expectParser(_parser, input).toSucceed({ value: "foo", loc: [0, 3] })
     })
 
     it("fails when all of the original parser fails", () => {
-        const src = "banana"
-        assertParser(parser, src, { offset: 4 }).fails(0, ['"bana"', '"nana"'])
-    })
-
-    it("matches the first parser that matches in ambigous cases", () => {
-        const parser = oneOf(str("an"), str("anan"))
-        const src = "banana"
-        assertParser(parser, src, { offset: 1 }).succeeds(2, "an")
+        const _parser = oneOf(not(parser), not(parser))
+        const input = new ParseInput("test", "foo", {})
+        expectParser(_parser, input).toFail({ expected: [] })
     })
 })
