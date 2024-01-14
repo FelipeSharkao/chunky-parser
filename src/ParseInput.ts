@@ -4,6 +4,16 @@ import type { Token, TokenType } from "@/tokens"
 export interface ParseContext {
     /** @internal */
     test?: string
+    /**
+     * Specifies options for the parsers
+     */
+    options?: {
+        /**
+         * If true, token and named parsers will log their results to the console. Use for debugging
+         * purposes
+         */
+        log?: boolean
+    }
 }
 
 /**

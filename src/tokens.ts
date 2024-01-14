@@ -24,7 +24,17 @@ export class TokenType<K extends string> implements ParserClass<Token<K>> {
     ) {}
 
     parse(input: ParseInput): ParseResult<Token<K>> {
+        const offset = input.offset
         const token = input.token(this)
+
+        if (input.context.options?.log) {
+            console.log(
+                "[LOG] Looking for token",
+                JSON.stringify(this.name),
+                `at ${offset}:`,
+                token ? "FOUND" : "NOT FOUND"
+            )
+        }
 
         return token
             ? { success: true, value: token, loc: token.loc }

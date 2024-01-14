@@ -14,6 +14,37 @@ export interface ParserClass<T> {
 export type ParserType<T extends Parser<unknown>> = T extends Parser<infer R> ? R : never
 
 /**
+ * Runs a parser with a input and returns its result. The input and its context won't be mutated. If
+ * the parser fails, this function will throw an error with information about the failure.
+ */
+export function parse<T>(parser: Parser<T>, input: ParseInput) {
+    if (input.context.options?.log) {
+        console.log("[LOG]", input.path)
+    }
+
+    try {
+        const result = run(parser, input.clone())
+        if (result.success) {
+            return result.value
+        }
+
+        let message = `Parsing error\nAt ${input.path}:${result.offset}\n    Unexpected input.`
+
+        if (result.expected.length === 1) {
+            message += `    Unexpected input. Expected ${result.expected[0]}`
+        } else if (result.expected.length > 1) {
+            message += `    Unexpected input. Expected one of: ${result.expected.join(", ")}`
+        }
+
+        throw new Error(message)
+    } finally {
+        if (input.context.options?.log) {
+            console.log()
+        }
+    }
+}
+
+/**
  * Runs a parser with a context and returns its result. Keep in mind that this makes no guarantees
  * that input won't be mutated, and a lot of parsers will mutate the input for performance reasons.
  * If you want to be able to recover the original input in case of failure, you should use `tryRun`.
