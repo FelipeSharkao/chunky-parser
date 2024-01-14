@@ -1,5 +1,5 @@
 import type { ParseFailure, ParseSuccess } from "@/ParseResult"
-import type { Token, TokenType } from "@/tokens"
+import type { Token, TokenParser } from "@/tokens"
 
 export interface ParseContext {
     /** @internal */
@@ -43,7 +43,7 @@ export class ParseInput {
      * Returns a token of the specified type from the current input if the current input starts with
      * this token type, or null otherwise
      */
-    token<K extends string>(type: TokenType<K>): Token<K> | null {
+    token<T extends string>(type: TokenParser<T>): Token<T> | null {
         if (this.tkCursor < this.tokens.length) {
             const tk = this.tokens[this.tkCursor]
 
@@ -57,7 +57,7 @@ export class ParseInput {
         const match = this.match(type.pattern)
 
         if (match != null) {
-            const tk = type.token(match, [this.srcCursor, this.srcCursor + match.length])
+            const tk = type.token(match as T, [this.srcCursor, this.srcCursor + match.length])
             this.tokens.push(tk)
             return tk
         }

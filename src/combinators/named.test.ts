@@ -2,17 +2,15 @@ import { describe, it } from "bun:test"
 
 import { ParseInput } from "@/ParseInput"
 import { run } from "@/Parser"
-import { tokens } from "@/tokens"
+import { TokenParser } from "@/tokens"
 import { expectParser } from "@/utils/testing"
 
 import { named } from "./named"
 
-const tk = tokens({
-    foo: { pattern: "foo" },
-})
+const foo = new TokenParser("foo", "foo")
 
 const parser = (input: ParseInput) => {
-    const result = run(tk.foo, input)
+    const result = run(foo, input)
     input.context.test = "foo"
 
     if (!result.success) {

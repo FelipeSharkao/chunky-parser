@@ -2,17 +2,15 @@ import { describe, it } from "bun:test"
 
 import { ParseInput } from "@/ParseInput"
 import { run } from "@/Parser"
-import { tokens } from "@/tokens"
+import { TokenParser } from "@/tokens"
 import { expectParser } from "@/utils/testing"
 
 import { map, raw } from "./transform"
 
-const tk = tokens({
-    number: { pattern: /[0-9]/ },
-})
+const number = new TokenParser("number", /[0-9]/)
 
 const parser = (input: ParseInput) => {
-    const result = run(tk.number, input)
+    const result = run(number, input)
     input.context.test = "number"
 
     if (!result.success) {

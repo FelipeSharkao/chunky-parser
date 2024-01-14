@@ -1,29 +1,25 @@
-import type { Simplify } from "type-fest"
-
 import type { ParseInput } from "@/ParseInput"
 import type { LocationRange, ParseResult } from "@/ParseResult"
 import type { ParserClass } from "@/Parser"
 
-export class Token<K extends string> {
+/**
+ * Represents a token parser. A token is a unit of text that is not further divided by the parser.
+ * For example, a token could be a string literal, a number, a keyword, or a symbol.
+ */
+export class TokenParser<T extends string> implements ParserClass<Token<T>> {
     constructor(
-        readonly key: K,
-        readonly text: string,
-        readonly loc: LocationRange
-    ) {}
-
-    is<K2 extends K>(type: TokenType<K2>): this is Token<K2> {
-        return this.key === type.key
-    }
-}
-
-export class TokenType<K extends string> implements ParserClass<Token<K>> {
-    constructor(
-        readonly key: K,
         public name: string,
-        public pattern: string | RegExp
-    ) {}
+        public pattern: T | RegExp
+    ) {
+        if (pattern instanceof RegExp) {
+            this.pattern = new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, "") + "y")
+        }
+    }
 
-    parse(input: ParseInput): ParseResult<Token<K>> {
+    /**
+     * Parses the input for a token of this type
+     */
+    parse(input: ParseInput): ParseResult<Token<T>> {
         const offset = input.offset
         const token = input.token(this)
 
@@ -41,35 +37,29 @@ export class TokenType<K extends string> implements ParserClass<Token<K>> {
             : { success: false, expected: [this.name], offset: input.offset }
     }
 
-    token(value: string, loc: LocationRange): Token<K> {
-        return new Token(this.key, value, loc)
+    /**
+     * Creates a token of this type
+     */
+    token(value: T, loc: LocationRange): Token<T> {
+        return new Token(this, value, loc)
     }
 }
 
 /**
- * Creates a set of token types from a definition object
+ * Represents a token in the source text. Should not be used directly, but rather through parsing
+ * the source text with a `TokenParser`
  */
-export function tokens<T extends TokensDefinition>(definition: T): TokensFromDefinition<T> {
-    const result = {} as TokensFromDefinition<T>
+export class Token<T extends string> {
+    constructor(
+        readonly type: TokenParser<T>,
+        readonly text: T,
+        readonly loc: LocationRange
+    ) {}
 
-    for (const key in definition) {
-        const item = definition[key]
-        let pat = item.pattern
-
-        if (pat instanceof RegExp) {
-            pat = new RegExp(pat.source, pat.flags.replace("g", "") + "y")
-        }
-
-        result[key] = new TokenType(key, item.name || key, pat)
+    /**
+     * Returns true if this token is of the specified type
+     */
+    is<T2 extends T>(type: TokenParser<T2>): this is Token<T & T2> {
+        return this.type === type
     }
-
-    return result
 }
-
-type TokensDefinition = {
-    [key: string]: { name?: string; pattern: string | RegExp }
-}
-
-type TokensFromDefinition<T extends TokensDefinition> = Simplify<{
-    [K in keyof T & string]: TokenType<K>
-}>
