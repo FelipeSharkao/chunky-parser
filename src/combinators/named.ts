@@ -38,11 +38,12 @@ export function named<T>(name: string, parser: Parser<T>): Parser<T> {
 }
 
 /**
- * Enables logging for parser `parser`
+ * Enables logging for parser `parser`. Only works if `options.log` of the input's context is
+ * unset. If it is `true` or `false`, the value is not changed.
  */
 export function log<T>(parser: Parser<T>): Parser<T> {
     return (input) => {
-        if (input.context.options?.log) {
+        if (input.context.options?.log != null) {
             return run(parser, input)
         }
 
@@ -60,8 +61,28 @@ export function log<T>(parser: Parser<T>): Parser<T> {
             console.log()
 
             if (input.context.options) {
-                input.context.options.log = false
+                input.context.options.log = undefined
             }
+        }
+    }
+}
+
+/**
+ * Disable logging for the parser `parser`. Only works if `options.log` of the input's context is
+ * `true`. If it is `false` or unset, the value is not changed. This is useful for disabling
+ * logging for a parser that is called by another parser that has logging enabled.
+ */
+export function noLog<T>(parser: Parser<T>): Parser<T> {
+    return (input) => {
+        if (input.context.options?.log !== true) {
+            return run(parser, input)
+        }
+
+        try {
+            input.context.options.log = false
+            return run(parser, input)
+        } finally {
+            input.context.options.log = true
         }
     }
 }
