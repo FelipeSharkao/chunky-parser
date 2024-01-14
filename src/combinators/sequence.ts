@@ -8,7 +8,7 @@ export type MergedParser<T extends readonly Parser<unknown>[]> = Parser<MergedPa
 
 export type RepeatedParser<T> = Parser<T[]>
 
-/*
+/**
  * Creates a parser that will match when all of its parsers matches in sequence
  */
 export function seq<T extends readonly Parser<unknown>[]>(...parsers: T): MergedParser<T> {
@@ -39,7 +39,7 @@ export function seq<T extends readonly Parser<unknown>[]>(...parsers: T): Merged
     }
 }
 
-/*
+/**
  * Creates a parser that will try to match the same parser repeated times
  */
 export function many<T>(parser: Parser<T>, min: number, max = min): RepeatedParser<T> {
@@ -68,14 +68,14 @@ export function many<T>(parser: Parser<T>, min: number, max = min): RepeatedPars
     }
 }
 
-/*
+/**
  * Creates a parser that will try to match the same parser zero or more number of times
  */
 export function many0<T>(parser: Parser<T>): RepeatedParser<T> {
     return many(parser, 0, Number.POSITIVE_INFINITY)
 }
 
-/*
+/**
  * Creates a parser that will try to match the same parser one or more number of times
  */
 export function many1<T>(parser: Parser<T>): RepeatedParser<T> {

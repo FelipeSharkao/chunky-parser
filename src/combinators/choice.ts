@@ -5,7 +5,7 @@ export type OptionalParser<T> = Parser<T | null>
 
 export type OneOfParser<T extends Parser<unknown>> = Parser<ParserType<T>>
 
-/*
+/**
  * Creates a parser that will match `null` instead of failing
  */
 export function optional<T>(parser: Parser<T>): OptionalParser<T> {
@@ -18,7 +18,7 @@ export function optional<T>(parser: Parser<T>): OptionalParser<T> {
     }
 }
 
-/*
+/**
  * Creates a parser that will never consume any text
  */
 export function predicate<T>(parser: Parser<T>): Parser<T> {
@@ -33,7 +33,7 @@ export function predicate<T>(parser: Parser<T>): Parser<T> {
     }
 }
 
-/*
+/**
  * Creates a parser that will succeed if the original parser fails, and will fail if the original
  * parser succeeds.
  */
@@ -48,7 +48,7 @@ export function not(parser: Parser<unknown>): Parser<null> {
     }
 }
 
-/*
+/**
  * Creates a parser that will match if any of its parsers matches. Parsers are tested in
  * order of application, matching the first to succeed
  */
