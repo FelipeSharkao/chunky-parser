@@ -2,6 +2,8 @@ import type { ParseInput } from "@/ParseInput"
 import type { LocationRange, ParseResult } from "@/ParseResult"
 import type { ParserClass } from "@/Parser"
 
+import { printLog } from "./utils/logging"
+
 /**
  * Represents a token parser. A token is a unit of text that is not further divided by the parser.
  * For example, a token could be a string literal, a number, a keyword, or a symbol.
@@ -23,14 +25,13 @@ export class TokenParser<T extends string> implements ParserClass<Token<T>> {
         const offset = input.offset
         const token = input.token(this)
 
-        if (input.context.options?.log) {
-            console.log(
-                "[LOG] Looking for token",
-                JSON.stringify(this.name),
-                `at ${offset}:`,
-                token ? "FOUND" : "NOT FOUND"
-            )
-        }
+        printLog(
+            input,
+            "Looking for token",
+            JSON.stringify(this.name),
+            `at ${offset}:`,
+            token ? "FOUND" : "NOT FOUND"
+        )
 
         return token
             ? { success: true, value: token, loc: token.loc }

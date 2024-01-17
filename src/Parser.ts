@@ -1,6 +1,8 @@
 import type { ParseInput } from "@/ParseInput"
 import type { ParseResult } from "@/ParseResult"
 
+import { printGroup, printGroupEnd } from "./utils/logging"
+
 export type Parser<T> = ParserFunction<T> | LazyParser<T> | ParserClass<T>
 
 type ParserFunction<T> = (input: ParseInput) => ParseResult<T>
@@ -18,9 +20,7 @@ export type ParserType<T extends Parser<unknown>> = T extends Parser<infer R> ? 
  * the parser fails, this function will throw an error with information about the failure.
  */
 export function parse<T>(parser: Parser<T>, input: ParseInput) {
-    if (input.context.options?.log) {
-        console.log("[LOG]", input.path)
-    }
+    printGroup(input, input.path)
 
     try {
         const result = run(parser, input.clone())
@@ -38,9 +38,7 @@ export function parse<T>(parser: Parser<T>, input: ParseInput) {
 
         throw new Error(message)
     } finally {
-        if (input.context.options?.log) {
-            console.log()
-        }
+        printGroupEnd(input)
     }
 }
 

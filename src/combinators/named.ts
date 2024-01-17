@@ -1,4 +1,5 @@
 import { run, type Parser } from "@/Parser"
+import { printGroup, printGroupEnd } from "@/utils/logging"
 
 /**
  * Creates a parser that assigned a human-readable name to `expected` in case of failure
@@ -6,16 +7,18 @@ import { run, type Parser } from "@/Parser"
 export function named<T>(name: string, parser: Parser<T>): Parser<T> {
     return (input) => {
         try {
+            const offset = input.offset
+
+            printGroup(input, "Looking for parser", JSON.stringify(name), `at ${offset}`)
+
             const result = run(parser, input)
 
-            if (input.context.options?.log) {
-                console.log(
-                    "[LOG] Looking for parser",
-                    JSON.stringify(name),
-                    `at ${input.offset}:`,
-                    result.success ? "FOUND" : "NOT FOUND"
-                )
-            }
+            printGroupEnd(
+                input,
+                "Parser",
+                JSON.stringify(name),
+                result.success ? "FOUND" : "NOT FOUND"
+            )
 
             if (result.success) {
                 return result
@@ -24,65 +27,57 @@ export function named<T>(name: string, parser: Parser<T>): Parser<T> {
             result.expected.splice(0, result.expected.length, name)
             return result
         } catch (e) {
-            if (input.context.options?.log) {
-                console.log(
-                    "[LOG] Looking for parser",
-                    JSON.stringify(name),
-                    `at ${input.offset}:`,
-                    "ERROR"
-                )
-            }
+            printGroupEnd(input, "Parser", JSON.stringify(name), "FAILED")
             throw e
         }
     }
 }
 
 /**
- * Enables logging for parser `parser`. Only works if `options.log` of the input's context is
+ * Enables logging for parser `parser`. Only works if `log.enabled` of the input's context is
  * unset. If it is `true` or `false`, the value is not changed.
  */
 export function log<T>(parser: Parser<T>): Parser<T> {
     return (input) => {
-        if (input.context.options?.log != null) {
+        if (input.context.log?.enabled !== undefined) {
             return run(parser, input)
         }
 
         try {
-            console.log("[LOG]", input.path)
-
-            if (!input.context.options) {
-                input.context.options = {}
+            if (!input.context.log) {
+                input.context.log = {}
             }
-            input.context.options.log = true
+            input.context.log.enabled = true
+
+            printGroup(input, input.path)
 
             return run(parser, input)
         } finally {
-            console.log("[LOG] Logging disabled")
-            console.log()
+            printGroupEnd(input)
 
-            if (input.context.options) {
-                input.context.options.log = undefined
+            if (input.context.log) {
+                input.context.log.enabled = undefined
             }
         }
     }
 }
 
 /**
- * Disable logging for the parser `parser`. Only works if `options.log` of the input's context is
+ * Disable logging for the parser `parser`. Only works if `log.enabled` of the input's context is
  * `true`. If it is `false` or unset, the value is not changed. This is useful for disabling
  * logging for a parser that is called by another parser that has logging enabled.
  */
 export function noLog<T>(parser: Parser<T>): Parser<T> {
     return (input) => {
-        if (input.context.options?.log !== true) {
+        if (input.context.log?.enabled !== true) {
             return run(parser, input)
         }
 
         try {
-            input.context.options.log = false
+            input.context.log.enabled = false
             return run(parser, input)
         } finally {
-            input.context.options.log = true
+            input.context.log.enabled = true
         }
     }
 }

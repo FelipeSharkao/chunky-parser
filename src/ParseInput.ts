@@ -9,12 +9,16 @@ export interface ParseContext {
     /**
      * Specifies options for the parsers
      */
-    options?: {
+    log?: {
         /**
          * If true, token and named parsers will log their results to the console. Use for debugging
          * purposes
          */
-        log?: boolean
+        enabled?: boolean
+        /**
+         * Determines how many spaces to indent the log output
+         */
+        indent?: number
     }
 }
 
