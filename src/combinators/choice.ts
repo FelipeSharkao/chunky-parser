@@ -49,79 +49,98 @@ export function not(parser: Parser<unknown>): Parser<null> {
 }
 
 /**
- * Creates a parser that will match if any of its parsers matches. Parsers are tested in
- * order of application, matching the first to succeed
+ * Creates a parser that will match if any of its parsers matches. In ambiguous cases, the last
+ * parser to match will be used. If all parsers fail, the parser will fail.
+ *
+ * In recursive cases with a defined order of precedence, apply the parsers in order of precedence,
+ * from highest to lowest. The parser will prefer the result with the lowest precedence that
+ * includes results from higher precedence parsers, and will consume as much text as possible.
  */
 export function oneOf<T extends Parser<unknown>[]>(...parsers: T): OneOfParser<T[number]> {
-    // Handle recursive patters by keeping track of the last used index at that offset.
-    // If the parser is executed again at the same tree due to a recursive parser, it will skip to
-    // the next index and continue from there. This avoids infinity loops due to left recursion.
+    const parser: OneOfParser<T[number]> = (input) => {
+        let maxIdx = parsers.length - 1
 
-    const recStack: { offset: number; idx: number; count: number }[] = []
+        let recStack = input.recStacks.get(parser)
+        if (!recStack) {
+            recStack = []
+            input.recStacks.set(parser, recStack)
+        }
 
-    // Key: "offset:index"
-    const cache = new Map<string, ParseResult<ParserType<T[number]>>>()
+        let state = recStack[recStack.length - 1]
+        const isLeftRec = state?.offset === input.offset
 
-    return (input) => {
-        const expected = [] as string[]
+        if (!state || !isLeftRec) {
+            // If the parser is not left recursive, we will run it as usual, so we need to push a
+            // new state to the stack. But if the parser is right recursive and comes from a left
+            // recursive sequence, we cannot check all options, but only those with a higher
+            // precedence than the current one, or the tree will be mirrored (operations will be
+            // evaluated right to left instead of left to right).
+            maxIdx = state?.isLeftRec && state?.optIdx != null ? state.optIdx - 1 : maxIdx
+            state = { offset: input.offset, optIdx: 0 }
+            recStack.push(state)
+        }
 
-        const lastRec = recStack[recStack.length - 1]
-        const rec = lastRec
-            ? { offset: input.offset, idx: lastRec.idx, count: lastRec.count + 1 }
-            : { offset: input.offset, idx: 0, count: 0 }
-        recStack.push(rec)
+        const setResult = (result: ParseResult<unknown>) => {
+            if (result.success || !state.lastRes) {
+                state.lastRes = result
+            } else if (
+                !state.lastRes.success &&
+                !result.success &&
+                result.offset === state.lastRes.offset
+            ) {
+                state.lastRes.expected.push(...result.expected)
+            }
+            return state.lastRes as ParseResult<ParserType<T[number]>>
+        }
 
-        // FIXME: using the remaining length will most likely create excessive stack frames. It
-        // would be better if the text was already tokenized first, greatly reducing the length of
-        // the input.
-        if (
-            lastRec &&
-            (lastRec.offset !== input.offset || rec.count > Math.min(input.length + 1, 20))
-        ) {
-            rec.idx += 1
-            rec.count = 0
+        if (isLeftRec) {
+            state.isLeftRec = true
+
+            // If the parser is left recursive, we can assume that it was already ran at this offset
+            // with higher precedence parsers. If those were successful, we want to build on top of
+            // that. To do so, we run the parser with the same index as before twice, once with the
+            // recursion disabled, and once with it enabled. If the recursion is disabled, the
+            // parser will only return the last result, and will not recurse. This makes sure that
+            // we're doing the recursion in incremental steps, and will abort once no more progress
+            // can be made.
+            if (!state.lastRes) {
+                throw new Error(
+                    "`oneOf` parser is infinitely left recursive. Make sure that all recursive parsers have a non-recursive option at highest precedence"
+                )
+            }
+
+            if (state.disableRec || !state.lastRes.success) {
+                return state.lastRes as ParseResult<ParserType<T[number]>>
+            }
+
+            state.disableRec = true
+            const result = tryRun(parsers[state.optIdx], input)
+            setResult(result)
+            state.disableRec = false
+
+            if (!result.success) {
+                return state.lastRes as ParseResult<ParserType<T[number]>>
+            }
+
+            input.offset = state.offset
+            setResult(tryRun(parsers[state.optIdx], input))
+            return state.lastRes as ParseResult<ParserType<T[number]>>
         }
 
         try {
-            for (; rec.idx < parsers.length; rec.idx++) {
-                const cacheKey = `${input.offset}:${rec.idx}`
+            for (; state.optIdx <= maxIdx; state.optIdx++) {
+                state.isLeftRec = false
+                input.offset = state.offset
 
-                // Only run the parser if it hasn't been run at this offset before
-                let cached = cache.get(cacheKey)
-                let result = cached
-
-                if (!result) {
-                    result = tryRun(parsers[rec.idx] as OneOfParser<T[number]>, input)
-                }
-
-                // If the parser is left recursive, a lot of repeated call stacks will be created.
-                // In one of them, the parser might succeed with the complete tree, but as the
-                // previous ones are still running, they will fail. We want to cache every success
-                // so if the parser fails due to this nesting, we can recover the successful result.
-                // We will also cache the first failure, but the next ones are probably due to this
-                // nesting shenanigans, so we will ignore them.
-                cached = cache.get(cacheKey)
-                if (result !== cached && result.success) {
-                    cache.set(cacheKey, result)
-                } else if (cached) {
-                    result = cached
-                }
-
-                if (result.success) {
-                    return result
-                } else {
-                    // If the parser is left recursive, we want to recover the successful result
-                    // from a nested attempt
-                    if (cached?.success) {
-                        return cached
-                    }
-
-                    expected.push(...result.expected)
-                }
+                const result = tryRun(parsers[state.optIdx], input)
+                setResult(result)
             }
-            return input.failure({ expected })
+
+            return state.lastRes as ParseResult<ParserType<T[number]>>
         } finally {
             recStack.pop()
         }
     }
+
+    return parser
 }

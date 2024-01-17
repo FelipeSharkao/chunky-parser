@@ -1,5 +1,7 @@
-import type { ParseFailure, ParseSuccess } from "@/ParseResult"
+import type { ParseFailure, ParseResult, ParseSuccess } from "@/ParseResult"
 import type { Token, TokenParser } from "@/tokens"
+
+import type { Parser } from "./Parser"
 
 export interface ParseContext {
     /** @internal */
@@ -24,6 +26,20 @@ export class ParseInput {
     private tokens: Token<string>[] = []
     private srcCursor = 0
     private tkCursor = 0
+    /**
+     * Used by `oneOf` to control flow in recursive parsers
+     * @internal
+     */
+    recStacks = new Map<
+        Parser<unknown>,
+        {
+            optIdx: number
+            offset: number
+            lastRes?: ParseResult<unknown>
+            isLeftRec?: boolean
+            disableRec?: boolean
+        }[]
+    >()
 
     constructor(
         readonly path: string,
@@ -36,6 +52,7 @@ export class ParseInput {
         newInput.tokens = this.tokens
         newInput.srcCursor = this.srcCursor
         newInput.tkCursor = this.tkCursor
+        newInput.recStacks = this.recStacks
         return newInput
     }
 
@@ -128,7 +145,10 @@ export class ParseInput {
         }
 
         if (value < this.srcCursor) {
-            while (this.tkCursor > 0 && this.tokens[this.tkCursor - 1].loc[0] > value) {
+            while (
+                this.tkCursor > 0 &&
+                (this.tkCursor >= this.tokens.length || this.tokens[this.tkCursor].loc[0] > value)
+            ) {
                 this.tkCursor -= 1
             }
         } else {

@@ -1,11 +1,13 @@
 import { describe, it, expect } from "bun:test"
 
 import { ParseInput } from "@/ParseInput"
-import { run } from "@/Parser"
+import { run, type Parser } from "@/Parser"
 import { TokenParser } from "@/tokens"
 import { expectParser } from "@/utils/testing"
 
 import { not, oneOf, optional, predicate } from "./choice"
+import { seq } from "./sequence"
+import { map } from "./transform"
 
 const foo = new TokenParser("foo", "foo")
 
@@ -57,16 +59,42 @@ describe("not", () => {
     })
 })
 
+const num = new TokenParser("num", /\d+/)
+const asterisk = new TokenParser("asterisk", "*")
+const plus = new TokenParser("plus", "+")
+
 describe("oneOf", () => {
     it("matches when any of parsers matches", () => {
-        const _parser = oneOf(not(parser), parser)
-        const input = new ParseInput("test", "foo", {})
-        expectParser(_parser, input).toSucceed({ value: "foo", loc: [0, 3] })
+        const _parser = oneOf(num, asterisk, plus)
+        const input = new ParseInput("test", "*", {})
+        expectParser(_parser, input).toSucceed({ value: asterisk.token("*", [0, 1]), loc: [0, 1] })
     })
 
     it("fails when all of the original parser fails", () => {
-        const _parser = oneOf(not(parser), not(parser))
+        const _parser = oneOf(num, asterisk, plus)
         const input = new ParseInput("test", "foo", {})
-        expectParser(_parser, input).toFail({ expected: [] })
+        expectParser(_parser, input).toFail({ expected: ["num", "asterisk", "plus"] })
+    })
+
+    it("handles order of precedence in recursive parsers", () => {
+        const expr = oneOf(
+            map(num, (res) => res.value.text),
+            () => mul,
+            () => sum
+        )
+        const sum: Parser<string> = map(
+            seq(expr, plus, expr),
+            (res) => `(${res.value[0]} + ${res.value[2]})`
+        )
+        const mul: Parser<string> = map(
+            seq(expr, asterisk, expr),
+            (res) => `(${res.value[0]} * ${res.value[2]})`
+        )
+
+        const input = new ParseInput("test", "1*2*3+4*5+6", {})
+        expectParser(expr, input).toSucceed({
+            value: "((((1 * 2) * 3) + (4 * 5)) + 6)",
+            loc: [0, 11],
+        })
     })
 })

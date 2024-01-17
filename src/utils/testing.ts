@@ -16,9 +16,13 @@ export function expectParser<T>(parser: Parser<T>, input: ParseInput) {
         toFail(args: { expected: string[]; offset?: number }) {
             expect(
                 !result.success
-                    ? { success: false, expected: result.expected, offset: result.offset }
+                    ? { success: false, expected: new Set(result.expected), offset: result.offset }
                     : result
-            ).toEqual({ success: false, offset: 0, ...args })
+            ).toEqual({
+                success: false,
+                offset: args.offset ?? 0,
+                expected: new Set(args.expected),
+            })
         },
     }
 }
