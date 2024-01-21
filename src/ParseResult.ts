@@ -1,18 +1,15 @@
-import type { ParseContext } from "@/ParseInput"
-import type { LocationRange, Source } from "@/Source"
-
 export type ParseResult<T> = ParseSuccess<T> | ParseFailure
 
-export type ParseSuccess<T> = Readonly<{
-    success: true
+export type ParseSuccess<T> = {
+    readonly success: true
     value: T
     loc: LocationRange
-    next: ParseContext
-}>
+}
 
-export type ParseFailure = Readonly<{
-    success: false
-    source: Source
+export type ParseFailure = {
+    readonly success: false
     offset: number
     expected: string[]
-}>
+}
+
+export type LocationRange = readonly [start: number, end: number]

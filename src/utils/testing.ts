@@ -1,62 +1,28 @@
-import { strict as assert } from "node:assert"
-import { inspect } from "node:util"
+import { expect } from "bun:test"
 
-import { ParseInput, type ParseContext } from "@/ParseInput"
-import type { ParseFailure, ParseSuccess } from "@/ParseResult"
-import { run, type LazyParser } from "@/Parser"
+import type { ParseInput } from "@/ParseInput"
+import type { LocationRange } from "@/ParseResult"
+import { run, type Parser } from "@/Parser"
 
-type AssertParserArgs = {
-    offset?: number
-    context?: ParseContext
-}
-
-export function assertParser<T>(
-    parser: LazyParser<T>,
-    content: string,
-    args: AssertParserArgs = {}
-) {
-    const input = new ParseInput(
-        { name: "anonymous", path: "anonymous", content },
-        args.offset || 0,
-        args.context || {}
-    )
+export function expectParser<T>(parser: Parser<T>, input: ParseInput) {
     const result = run(parser, input)
 
     return {
-        succeeds(length: number, value: T): ParseSuccess<T> {
-            assert.ok(
-                result.success,
-                `Expect parser to succeed with value ${inspect(value)}, it failed instead`
-            )
-
-            const actualLength = result.loc[1] - result.loc[0]
-            assert.equal(
-                actualLength,
-                length,
-                `Expected parser to match ${length} characters, it matched ${actualLength} instead.`
-            )
-
-            assert.deepEqual(result.value, value)
-
-            return result
+        toSucceed(args: { value: T; loc: LocationRange }) {
+            expect(
+                result.success ? { success: true, value: result.value, loc: result.loc } : result
+            ).toEqual({ success: true, ...args })
         },
-        fails(after = 0, reason: string[] = []): ParseFailure {
-            assert.ok(!result.success, "Expect parser to fail, it succeeded instead")
-
-            assert.deepEqual(
-                {
-                    success: false,
-                    offset: result.offset,
-                    expected: new Set(result.expected),
-                },
-                {
-                    success: false,
-                    offset: (args.offset || 0) + after,
-                    expected: new Set(reason),
-                }
-            )
-
-            return result
+        toFail(args: { expected: string[]; offset?: number }) {
+            expect(
+                !result.success
+                    ? { success: false, expected: new Set(result.expected), offset: result.offset }
+                    : result
+            ).toEqual({
+                success: false,
+                offset: args.offset ?? 0,
+                expected: new Set(args.expected),
+            })
         },
     }
 }

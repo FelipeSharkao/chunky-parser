@@ -12,10 +12,10 @@ type Color = {
   blue: number;
 };
 
-const hexDigit = anyIn('09', 'af', 'AF');
+const hexDigit = new TokenParser("Hex Digit", /[0-9a-fA-F]/)
 
 const hexPrimary = (length: number) => map(
-  raw(many(hexDigit, length, length)),
+  raw(many(hexDigit, length)),
   (res) => parseInt(res.value, 16)
 ));
 

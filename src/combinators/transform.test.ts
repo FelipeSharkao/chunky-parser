@@ -1,38 +1,55 @@
 import { describe, it } from "bun:test"
 
-import { num } from "@/parsers"
-import { assertParser } from "@/utils/testing"
+import { ParseInput } from "@/ParseInput"
+import { run } from "@/Parser"
+import { TokenParser } from "@/tokens"
+import { expectParser } from "@/utils/testing"
 
 import { map, raw } from "./transform"
 
+const number = new TokenParser("number", /[0-9]/)
+
+const parser = (input: ParseInput) => {
+    const result = run(number, input)
+    input.context.test = "number"
+
+    if (!result.success) {
+        return result
+    }
+
+    return input.success({
+        value: result.value.text,
+        start: result.loc[0],
+        end: result.loc[1],
+    })
+}
+
 describe("map", () => {
     it("transforms the output of a parser", () => {
-        const parser = map(num, (res) => Number(res.value))
-        const src = "12"
-        assertParser(parser, src, { offset: 0 }).succeeds(1, 1)
-        assertParser(parser, src, { offset: 1 }).succeeds(1, 2)
+        const _parser = map(parser, (res) => Number(res.value))
+        const input = new ParseInput("test", "12", {})
+        expectParser(_parser, input).toSucceed({ value: 1, loc: [0, 1] })
+        expectParser(_parser, input).toSucceed({ value: 2, loc: [1, 2] })
     })
 
     it("fails when the original parser fails", () => {
-        const parser = map(num, (res) => Number(res.value))
-        const src = "1a"
-        assertParser(parser, src, { offset: 0 }).succeeds(1, 1)
-        assertParser(parser, src, { offset: 1 }).fails(0, ['any character between "0" and "9"'])
+        const _parser = map(parser, (res) => Number(res.value))
+        const input = new ParseInput("test", "a", {})
+        expectParser(_parser, input).toFail({ expected: ["number"] })
     })
 })
 
 describe("raw", () => {
     it("discards the parser value and results the original text", () => {
-        const parser = raw(map(num, (value) => Number(value)))
-        const src = "12"
-        assertParser(parser, src, { offset: 0 }).succeeds(1, "1")
-        assertParser(parser, src, { offset: 1 }).succeeds(1, "2")
+        const _parser = raw(map(parser, (value) => Number(value)))
+        const input = new ParseInput("test", "12", {})
+        expectParser(_parser, input).toSucceed({ value: "1", loc: [0, 1] })
+        expectParser(_parser, input).toSucceed({ value: "2", loc: [1, 2] })
     })
 
     it("fails when the original parser fails", () => {
-        const parser = raw(map(num, (value) => Number(value)))
-        const src = "1a"
-        assertParser(parser, src, { offset: 0 }).succeeds(1, "1")
-        assertParser(parser, src, { offset: 1 }).fails(0, ['any character between "0" and "9"'])
+        const _parser = raw(map(parser, (value) => Number(value)))
+        const input = new ParseInput("test", "a", {})
+        expectParser(_parser, input).toFail({ expected: ["number"] })
     })
 })

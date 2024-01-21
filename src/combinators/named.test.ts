@@ -1,18 +1,39 @@
 import { describe, it } from "bun:test"
 
-import { str } from "@/parsers"
-import { assertParser } from "@/utils/testing"
+import { ParseInput } from "@/ParseInput"
+import { run } from "@/Parser"
+import { TokenParser } from "@/tokens"
+import { expectParser } from "@/utils/testing"
 
 import { named } from "./named"
 
+const foo = new TokenParser("foo", "foo")
+
+const parser = (input: ParseInput) => {
+    const result = run(foo, input)
+    input.context.test = "foo"
+
+    if (!result.success) {
+        return result
+    }
+
+    return input.success({
+        value: result.value.text,
+        start: result.loc[0],
+        end: result.loc[1],
+    })
+}
+
 describe("named", () => {
-    const parser = named("Named Test", str("foo"))
+    const _parser = named("Named Test", parser)
 
     it("succeeds when the orignal parser succeeds", () => {
-        assertParser(parser, "foo bar").succeeds(3, "foo")
+        const input = new ParseInput("test", "foo", {})
+        expectParser(_parser, input).toSucceed({ value: "foo", loc: [0, 3] })
     })
 
     it("assign the name to expected when the orignal parser succeeds", () => {
-        assertParser(parser, "foo bar", { offset: 4 }).fails(0, ["Named Test"])
+        const input = new ParseInput("test", "bar", {})
+        expectParser(_parser, input).toFail({ expected: ["Named Test"] })
     })
 })
