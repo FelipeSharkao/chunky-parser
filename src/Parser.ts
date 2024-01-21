@@ -11,6 +11,8 @@ type LazyParser<T> = () => Parser<T>
 
 export interface ParserClass<T> {
     parse(input: ParseInput): ParseResult<T>
+    // Remove ambiguity between ParserClass and ParseResult
+    success?: undefined
 }
 
 export type ParserType<T extends Parser<unknown>> = T extends Parser<infer R> ? R : never
@@ -50,11 +52,13 @@ export function parse<T>(parser: Parser<T>, input: ParseInput) {
 export function run<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
     let result: ParseResult<T>
     if (typeof parser == "function") {
-        let lazyResult = parser(input)
-        if (typeof lazyResult == "function") {
-            lazyResult = lazyResult(input)
+        const lazyResult = parser(input)
+
+        if ("success" in lazyResult && lazyResult.success != null) {
+            result = lazyResult
+        } else {
+            result = run(lazyResult, input)
         }
-        result = lazyResult as ParseResult<T>
     } else {
         result = parser.parse(input)
     }
@@ -72,16 +76,7 @@ export function run<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
 export function tryRun<T>(parser: Parser<T>, input: ParseInput): ParseResult<T> {
     const newInput = input.clone()
 
-    let result: ParseResult<T>
-    if (typeof parser == "function") {
-        let lazyResult = parser(newInput)
-        if (typeof lazyResult == "function") {
-            lazyResult = lazyResult(newInput)
-        }
-        result = lazyResult as ParseResult<T>
-    } else {
-        result = parser.parse(newInput)
-    }
+    const result = run(parser, newInput)
 
     if (result.success) {
         input.offset = result.loc[1]

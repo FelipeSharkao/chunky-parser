@@ -5,7 +5,7 @@ import { run, type Parser } from "@/Parser"
 import { TokenParser } from "@/tokens"
 import { expectParser } from "@/utils/testing"
 
-import { not, oneOf, optional, predicate } from "./choice"
+import { ParserWithPrecedence, not, oneOf, optional, predicate, withPrecedence } from "./choice"
 import { seq } from "./sequence"
 import { map } from "./transform"
 
@@ -75,19 +75,33 @@ describe("oneOf", () => {
         const input = new ParseInput("test", "foo", {})
         expectParser(_parser, input).toFail({ expected: ["num", "asterisk", "plus"] })
     })
+})
+
+describe("recOneOf", () => {
+    it("matches when any of parsers matches", () => {
+        const _parser = withPrecedence(num, asterisk, plus)
+        const input = new ParseInput("test", "*", {})
+        expectParser(_parser, input).toSucceed({ value: asterisk.token("*", [0, 1]), loc: [0, 1] })
+    })
+
+    it("fails when all of the original parser fails", () => {
+        const _parser = withPrecedence(num, asterisk, plus)
+        const input = new ParseInput("test", "foo", {})
+        expectParser(_parser, input).toFail({ expected: ["num", "asterisk", "plus"] })
+    })
 
     it("handles order of precedence in recursive parsers", () => {
-        const expr = oneOf(
+        const expr: ParserWithPrecedence<string> = withPrecedence(
             map(num, (res) => res.value.text),
             () => mul,
             () => sum
         )
         const sum: Parser<string> = map(
-            seq(expr, plus, expr),
+            seq(expr.left, plus, expr.right),
             (res) => `(${res.value[0]} + ${res.value[2]})`
         )
         const mul: Parser<string> = map(
-            seq(expr, asterisk, expr),
+            seq(expr.left, asterisk, expr.right),
             (res) => `(${res.value[0]} * ${res.value[2]})`
         )
 
